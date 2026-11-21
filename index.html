@@ -84,7 +84,7 @@ select{font:inherit;font-size:14px;padding:6px;border-radius:8px;border:1px soli
   <div class="toast" id="toast"></div>
 </div>
 <script>
-const VERSION='0.2.2';
+const VERSION='0.2.3';
 // ---------- basics ----------
 const WDA={sun:0,sunday:0,mon:1,monday:1,tue:2,tues:2,tuesday:2,wed:3,wednesday:3,thu:4,thur:4,thurs:4,thursday:4,fri:5,friday:5,sat:6,saturday:6,jumma:5,juma:5,jumeraat:4,itwaar:0,itwar:0,mangal:2,budh:3};
 const MON={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,sept:8,oct:9,nov:10,dec:11};
@@ -151,7 +151,16 @@ function keywords(text){
 }
 
 // ---------- parse ----------
+const CUR=[[/\$|\busd\b|\bdollars?\b/i,'USD'],[/\bmyr\b|\brm\s?\d|\bringgit\b/i,'MYR'],[/\baed\b|\bdirhams?\b/i,'AED'],[/\bsar\b|\briyals?\b/i,'SAR'],[/\beur\b|\beuros?\b|€/i,'EUR'],[/\bgbp\b|\bpounds?\b|£/i,'GBP']];
+function curOf(text){for(const [re,c] of CUR)if(re.test(text))return c;return null}
+const money=(f,n)=>f&&f.cur?f.cur+' '+fN(n):rs(n);
 function parse(text,base,prevVal){
+  const f=parseCore(text,base,prevVal);const c=curOf(text);
+  if(c&&f.amount!=null&&['money','credit','debt','payment','task','event'].includes(f.type)){f.cur=c;if(['credit','debt','payment'].includes(f.type)){f.type='note';f.curNote=true}}
+  return f;
+}
+const UVERB=/^([a-z]+)\s+(ko|se|ne)\s+(?:rs\.?\s?)?(\d[\d,]*(?:\.\d+)?)(k)?\s*(?:rs\s+|rupees?\s+|advance\s+|udhaa?r\s+|wapas\s+|wapis\s+)*(de diye|de diya|le liye|le liya|wapas kiye|wapas kiya|wapis kiye|return kiye|dene hain|dena hai|lene hain|lena hai|diye|diya|di|liye|liya|li|dene|lene|bheje|bheja|lautaye)\b/i;
+function parseCore(text,base,prevVal){
   const lower=text.toLowerCase().trim();const f={};let m;
   const br=text.match(/\(([^)]*)\)\s*$/);const when=br?br[1].trim():null;
   f.dt=parseDT(lower,base);
@@ -176,6 +185,10 @@ function parse(text,base,prevVal){
   if((m=lower.match(/^(?:weather|how'?s the weather)(?:\s+in)?\s+([a-z]+)/))){f.type='note';return f}
   if((m=text.match(/^(?:hi|hello|salam|salaam|wish|congratulate|tell|message|msg|text|whatsapp)\b.*?\bto\s+([A-Za-z]+)/i))||(m=text.match(/^(?:hi|hello|salam|salaam)\s+([A-Z][a-z]+)/i))&&/^[A-Z]/.test(m[1])){f.type='note';f.kind='message';f.person=cap(m[1].toLowerCase());if(!f.people.includes(f.person))f.people.push(f.person);return f}
   if((m=text.match(/^(?:for|send to|forward to|share with)\s+([A-Za-z]+)\s*[:,\-]?\s*(.*)$/i))){f.type='note';f.kind='hold';f.person=cap(m[1].toLowerCase());f.body=m[2];if(!f.people.includes(f.person))f.people.push(f.person);return f}
+  if((m=lower.match(UVERB))){const p=cap(m[1]),a=num(m[3],m[4]),pp=m[2],v=m[5];let t=null;
+    if(pp==='ko'&&/^(de |di)/.test(v))t='credit';else if(pp==='se'&&/^(le |li)/.test(v))t='debt';
+    else if(pp==='ne')t='payment';else if(pp==='ko'&&/^den/.test(v))t='debt';else if(pp==='se'&&/^len/.test(v))t='credit';
+    if(t&&!NOTP.has(m[1])){f.type=t;f.amount=a;f.person=p;f.people=[p];f.when=when;return f}}
   if((m=text.match(/^([A-Za-z][a-z]+)\s+(paid|sent|gave|returned|transferred)\s+(?:me\s+|back\s+)*(?:rs\.?\s?)?(\d[\d,]*(?:\.\d+)?)(k)?/i))&&!/^(i|we)$/i.test(m[1])){f.type='payment';f.person=cap(m[1].toLowerCase());f.amount=num(m[3],m[4]);return f}
   if((m=lower.match(/^(?:i owe|owe)\s+([a-z]+)\s+(?:rs\.?\s?)?(\d[\d,]*)(k)?/))||(m=lower.match(/^borrowed\s+(?:rs\.?\s?)?(\d[\d,]*)(k)?\s+from\s+([a-z]+)/))){
     const p=isNaN(num(m[1]))?m[1]:m[3];const a=isNaN(num(m[1]))?num(m[2],m[3]):num(m[1],m[2]);f.type='debt';f.when=when;f.person=cap(p);f.amount=a;f.people.push(f.person);return f}
@@ -250,7 +263,7 @@ function personBal(p,until){
 const allPeople=()=>{const s=new Set();S.lines.forEach(l=>(l.f.people||[]).forEach(p=>s.add(p)));return [...s].sort()};
 
 // ---------- answers ----------
-function spendIn(from,to,filter){return S.lines.filter(l=>['money','event'].includes(l.type)&&l.f.amount&&l.ts>=from&&l.ts<=to&&(!filter||filter(l)))}
+function spendIn(from,to,filter){return S.lines.filter(l=>['money','event'].includes(l.type)&&l.f.amount&&!l.f.cur&&l.ts>=from&&l.ts<=to&&(!filter||filter(l)))}
 function weekStart(d){return addD(sod(d),-((d.getDay()+6)%7))}
 function answer(text,now){
   const lw=text.toLowerCase();
@@ -288,11 +301,11 @@ function salaryTxt(){return ' · on salary day'+(S.rhythms.salaryDay?' ('+ord(S.
 const TL={status:'Update',reading:'Reading',ref:'Reference',transfer:'Transfer',signal:'Noted',event:'Event',money:'Money',math:'Math',task:'To do',payment:'Received',note:'Note',ask:'Answer',secret:'Secret',link:'Link',live:'Live answer',message:'Reminder',hold:'Held',credit:'Owed to you',debt:'You owe',invoice:'Invoice',bill:'Bill',income:'Income'};
 function meaning(l,now){
   const f=l.f;switch(l.type){
-    case 'event':return (f.dt?fDT(f.dt):'Pick a date')+(f.amount?' · '+rs(f.amount):'');
-    case 'money':return rs(f.amount)+(f.cat?' · '+f.cat:'')+(f.items?' · '+f.items.length+' items':'');
+    case 'event':return (f.dt?fDT(f.dt):'Pick a date')+(f.amount?' · '+money(f,f.amount):'');
+    case 'money':return money(f,f.amount)+(f.cur?' · not in Rs totals':'')+(f.cat?' · '+f.cat:'')+(f.items?' · '+f.items.length+' items':'');
     case 'income':return '+ '+rs(f.amount)+' in';
     case 'math':return '= '+fN(f.math.value)+(f.math.fromPrev&&/[\/÷]/.test(f.math.op)?' each':'')+(f.budget?' · budget':'');
-    case 'task':return l.done?'Done':((f.amount?rs(f.amount)+' · ':'')+(f.assignee?f.assignee+' · ':'')+(f.trigger?salaryTxt().slice(3):(f.dt?'due '+fDT(f.dt):'whenever')));
+    case 'task':return l.done?'Done':((f.amount?money(f,f.amount)+' · ':'')+(f.assignee?f.assignee+' · ':'')+(f.trigger?salaryTxt().slice(3):(f.dt?'due '+fDT(f.dt):'whenever')));
     case 'payment':return f.person+' paid you '+rs(f.amount);
     case 'secret':return 'Locked · tap to reveal · this device only';
     case 'link':return 'Link'+(f.label?' · '+f.label:'');
@@ -309,7 +322,7 @@ function meaning(l,now){
     case 'transfer':return (l.done?'Done · ':'')+rs(f.amount)+' · '+f.from+' → '+f.to+(f.trigger?salaryTxt():'');
     case 'signal':return 'Salary noted'+(S.rhythms.salaryDay?' · usually the '+ord(S.rhythms.salaryDay):'');
     case 'ask':return l.answer;
-    default:return '';
+    default:return f.curNote?money(f,f.amount)+' · kept out of balances':'';
   }
 }
 

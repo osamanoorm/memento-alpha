@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.3 · 22 Nov 2026
+- Roman Urdu money: "Ali ko 2000 diye", "Ali se 2k liye", "Ali ne 500 diye", "Ali ko 3000 dene hain", "Sara se 1500 lene hain".
+- Honest currency: "$400" or "25 usd" shows as USD and is never added to rupee totals or balances.
+- Test list: 52 real phrases checked before every push (tests/run.py).
+
 ## 0.2.2 · 22 Nov 2026
 - Fixed: "I owe Ali 2000" and "borrowed 2000 from Ali" did nothing when sent.
 - Fixed: "hello world" no longer tags "World" as a person.
