@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 · 22 Nov 2026
+Connections, and ready for the research circle.
+- Connections: write "dinner sat?" and an older open line like "try that new sushi place" comes back as a card under it (Done / Not now). Links by topic (eating out, watching, reading, car, learning, writing, gifts, trips), not just shared words. Shows in the preview while typing. At most 5 a day; done lines never come back; "Not now" quiets a line for a month.
+- Remind me: dated lines and month-tagged loans get a button that adds a real phone reminder to Calendar.
+- Not right?: tap a line, then "Not right?" to copy the miss for the research group.
+- Welcome note on first open: test version, use fake passwords, export weekly.
+- Tests: 59 checks, including connections.
+
 ## 0.2.3 · 22 Nov 2026
 - Roman Urdu money: "Ali ko 2000 diye", "Ali se 2k liye", "Ali ne 500 diye", "Ali ko 3000 dene hain", "Sara se 1500 lene hain".
 - Honest currency: "$400" or "25 usd" shows as USD and is never added to rupee totals or balances.

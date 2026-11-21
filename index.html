@@ -84,7 +84,7 @@ select{font:inherit;font-size:14px;padding:6px;border-radius:8px;border:1px soli
   <div class="toast" id="toast"></div>
 </div>
 <script>
-const VERSION='0.2.3';
+const VERSION='0.3.0';
 // ---------- basics ----------
 const WDA={sun:0,sunday:0,mon:1,monday:1,tue:2,tues:2,tuesday:2,wed:3,wednesday:3,thu:4,thur:4,thurs:4,thursday:4,fri:5,friday:5,sat:6,saturday:6,jumma:5,juma:5,jumeraat:4,itwaar:0,itwar:0,mangal:2,budh:3};
 const MON={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,sept:8,oct:9,nov:10,dec:11};
@@ -287,6 +287,24 @@ function answer(text,now){
 function search(q,now){const words=q.split(/\s+/).filter(w=>w.length>1);const cat=Object.keys(CATS).find(c=>q.includes(c));
   const hits=S.lines.filter(l=>l.type!=='ask'&&l.type!=='secret'&&l.ts<=now&&(words.every(w=>l.text.toLowerCase().includes(w))||(cat&&(l.f.cat===cat||catOf(l.text.toLowerCase())===cat)))).sort((a,b)=>b.ts-a.ts).slice(0,4);
   return hits.length?hits.map(l=>'"'+l.text+'" ('+fD(l.ts)+')').join(' · '):'Nothing found for "'+q+'"';}
+const GROUPS={
+ eat:'dinner lunch breakfast brunch eat eating restaurant restaurants cafe cafes coffee place spot food sushi kebab kebabs pizza burger burgers biryani bbq steak shawarma dessert icecream karahi nihari haleem chinese thai italian',
+ watch:'movie movies film films cinema watch watching netflix series show shows season episode trailer imax',
+ read:'book books read reading novel author bookshop bookstore library kindle daraz',
+ car:'car oil service tyre tyres tire tires petrol mechanic workshop km odometer battery',
+ learn:'learn learning course courses tutorial study llm llms mcp agents ai',
+ write:'post posts linkedin write writing article blog content',
+ gift:'gift gifts birthday anniversary present eid',
+ trip:'trip travel holiday flight hotel visit vacation'};
+const GW={};Object.entries(GROUPS).forEach(([g,ws])=>ws.split(' ').forEach(w=>(GW[w]=GW[w]||[]).push(g)));
+function groupsOf(text){const out=new Set();text.toLowerCase().split(/[^a-z]+/).forEach(w=>(GW[w]||[]).forEach(g=>out.add(g)));return out}
+const NOCONN=['secret','credit','debt','payment','ref','ask','status','signal','transfer','math','money','link'];
+function isOpen(l,now){if(l.done)return false;const so=stateOf(l);if(so&&so.state==='done')return false;const z=S.snooze[l.id];return !(z&&z>+now)}
+function findConn(text,ts,excludeId){
+  const gs=groupsOf(text);if(!gs.size)return null;
+  const c=S.lines.filter(x=>x.id!==excludeId&&(x.type==='note'||x.type==='reading'||(x.type==='task'&&!x.f.dt))&&!x.conn&&ts-x.ts>10*60e3&&isOpen(x,ts)&&[...groupsOf(x.text)].some(g=>gs.has(g)))
+    .sort((a,b)=>b.ts-a.ts);return c[0]||null}
+function connsToday(now){return S.lines.filter(l=>l.conn&&sod(l.ts).getTime()===sod(now).getTime()).length}
 function related(text,excludeId){const kw=[...keywords(text)];if(!kw.length)return null;let best=null,score=0;
   S.lines.forEach(l=>{if(l.id===excludeId||['ask','secret','signal','status','ref'].includes(l.type))return;const k2=keywords(l.text);let s=0;kw.forEach(k=>{if(k2.has(k))s++});if(s>score){score=s;best=l}});return best}
 
@@ -403,10 +421,11 @@ function openSheet(id){
    <div class="muted" style="margin-top:6px">It is:</div><div class="tps">${types.map(t=>`<span class="tp ${l.type===t?'on':''}" data-t="${t}">${TL[t]}</span>`).join('')}</div>
    <div class="muted">Belongs with:</div><select id="th" style="width:100%;margin:4px 0 10px"><option value="">Nothing</option><option value="new">Start a new thread</option>${Object.values(S.threads).map(t=>`<option value="${t.id}" ${l.thread===t.id?'selected':''}>${esc(t.name)}</option>`).join('')}</select>
    ${l.type==='live'?`<button class="btn" id="pin">${S.pinned[l.id]?'Unpin':'Pin, keep it'}</button>`:''}
-   <button class="btn dark" id="sv">Save</button><button class="btn" id="dl">Delete</button><button class="btn" id="cx">Cancel</button>`;
+   <button class="btn" id="nr">Not right? Copy for feedback</button><br><button class="btn dark" id="sv">Save</button><button class="btn" id="dl">Delete</button><button class="btn" id="cx">Cancel</button>`;
   bg.style.display='flex';let forced=null;
   document.querySelectorAll('#sheet .tp').forEach(x=>x.onclick=()=>{forced=x.dataset.t;document.querySelectorAll('#sheet .tp').forEach(y=>y.classList.toggle('on',y===x))});
   document.getElementById('cx').onclick=()=>bg.style.display='none';
+  document.getElementById('nr').onclick=()=>{const m=meaning(l,NOW());const msg=`Memento miss (alpha ${VERSION}): "${l.type==='secret'?'[secret line]':l.text}" read as ${TL[l.type]}${m&&l.type!=='secret'?': '+m:''}`;try{navigator.clipboard.writeText(msg);toast('Copied. Paste it in the research group.')}catch(err){toast('Could not copy')}};
   const pin=document.getElementById('pin');if(pin)pin.onclick=()=>{S.pinned[l.id]=!S.pinned[l.id];save();bg.style.display='none';render()};
   document.getElementById('dl').onclick=()=>{S.lines=S.lines.filter(x=>x!==l);tidy();save();bg.style.display='none';render()};
   document.getElementById('sv').onclick=()=>{l.text=document.getElementById('ed').value.trim()||l.text;const f=parse(l.text,l.ts,prevVal(new Date(l.ts-1)));l.f=f;l.type=f.type;l.forced=null;
@@ -421,19 +440,19 @@ function toast(t){const e=document.getElementById('toast');e.textContent=t;e.sty
 
 // ---------- state + saving (this device only) ----------
 const KEY='memento-alpha',KEY_SEC='memento-alpha-secrets';
-let S={lines:[],threads:{},acted:{},pinned:{},rhythms:{}};let uid=1;
+let S={lines:[],threads:{},acted:{},pinned:{},rhythms:{},snooze:{}};let uid=1;
 const NOW=()=>new Date();
 function pack(){
-  const lines=S.lines.filter(l=>l.type!=='secret').map(l=>({id:l.id,text:l.text,ts:+l.ts,forced:l.forced||null,done:!!l.done,thread:l.thread||null,splitPay:!!l.splitPay,answer:l.answer||null,rel:l.rel||null}));
+  const lines=S.lines.filter(l=>l.type!=='secret').map(l=>({id:l.id,text:l.text,ts:+l.ts,forced:l.forced||null,done:!!l.done,thread:l.thread||null,splitPay:!!l.splitPay,answer:l.answer||null,rel:l.rel||null,conn:l.conn||null}));
   const threads={};Object.values(S.threads).forEach(t=>threads[t.id]={id:t.id,name:t.name,created:+t.created});
-  return {v:1,app:VERSION,lines,threads,acted:S.acted,pinned:S.pinned,rhythms:S.rhythms,saved:Date.now()};
+  return {v:1,app:VERSION,lines,threads,acted:S.acted,pinned:S.pinned,rhythms:S.rhythms,snooze:S.snooze,saved:Date.now()};
 }
 function packSecrets(){return S.lines.filter(l=>l.type==='secret').map(l=>({id:l.id,text:l.text,ts:+l.ts,done:!!l.done}))}
 function unpack(d,secrets){
-  S={lines:[],threads:{},acted:d.acted||{},pinned:d.pinned||{},rhythms:d.rhythms||{}};
+  S={lines:[],threads:{},acted:d.acted||{},pinned:d.pinned||{},rhythms:d.rhythms||{},snooze:d.snooze||{}};
   Object.values(d.threads||{}).forEach(t=>S.threads[t.id]={id:t.id,name:t.name,created:new Date(t.created)});
   const raw=(d.lines||[]).concat((secrets||[]).map(x=>({...x,forced:null,thread:null}))).sort((a,b)=>a.ts-b.ts);
-  raw.forEach(r=>{const ts=new Date(r.ts);const f=parse(r.text,ts,prevVal(ts));S.lines.push({id:r.id,text:r.text,ts,f,type:r.forced||f.type,forced:r.forced,done:r.done,thread:r.thread,splitPay:r.splitPay,answer:r.answer,rel:r.rel})});
+  raw.forEach(r=>{const ts=new Date(r.ts);const f=parse(r.text,ts,prevVal(ts));S.lines.push({id:r.id,text:r.text,ts,f,type:r.forced||f.type,forced:r.forced,done:r.done,thread:r.thread,splitPay:r.splitPay,answer:r.answer,rel:r.rel,conn:r.conn})});
   uid=Math.max(1,...S.lines.map(l=>l.id+1),...Object.keys(S.threads).map(k=>+k.slice(1)+1));
 }
 function save(){try{localStorage.setItem(KEY,JSON.stringify(pack()));localStorage.setItem(KEY_SEC,JSON.stringify(packSecrets()))}catch(e){toast('Could not save on this device')}}
@@ -444,7 +463,8 @@ function persist(){try{if(navigator.storage&&navigator.storage.persist)navigator
 function prevVal(ts){const p=S.lines.filter(x=>x.ts<=ts).sort((a,b)=>b.ts-a.ts)[0];return p?val(p):null}
 function build(text,ts){const f=parse(text,ts,prevVal(ts));return {id:uid++,text,ts,f,type:f.type,done:false,thread:null}}
 function add(text){text=text.trim();if(!text)return;const ts=NOW();const l=build(text,ts);l.thread=assignThread(l);
-  if(!l.thread&&!['ask','secret','signal'].includes(l.type)){const r=related(text,l.id);if(r&&(ts-r.ts)>10*60e3)l.rel=r.id}
+  if(!NOCONN.includes(l.type)&&connsToday(ts)<5){const c=findConn(text,ts,l.id);if(c)l.conn=c.id}
+  if(!l.thread&&!['ask','secret','signal'].includes(l.type)){const r=related(text,l.id);if(r&&(ts-r.ts)>10*60e3&&r.id!==l.conn)l.rel=r.id}
   if(l.type==='signal'&&!S.rhythms.salaryDay)S.rhythms.salaryDay=ts.getDate();
   S.lines.push(l);if(l.type==='ask')l.answer=answer(text,ts);save();render();
   if(l.f.trigger==='salary'&&!S.rhythms.salaryDay)setTimeout(askSalary,350);
@@ -470,8 +490,18 @@ function lineHTML(l,now){
   const so=['status','ask','secret'].includes(l.type)?null:stateOf(l);let mn=meaning(l,now);if(so)mn=(so.state==='on'?'▶ watching':'✓ done '+fD(so.ts))+(mn?' · '+mn:'');const t=l.thread&&S.threads[l.thread];
   const r=l.rel&&S.lines.find(x=>x.id===l.rel);
   const ppl=[...new Set(f.people||[])].map(p=>`<span class="pill" data-p="${esc(p)}">${esc(p)}</span>`).join('');
-  return `<div class="me ${l.done?'done':''} ${fade?'faded':''}" data-id="${l.id}"><div class="tx">${tx}</div>${(mn||t||ppl||r)?`<div class="mn">${mn?`<span class="v ${['math','ask','live','transfer'].includes(l.type)?'strong':''}">${esc(fade?'faded · tap to keep':mn)}</span>`:''}${t?`<span class="pill" data-th="${t.id}">${esc(t.name)}</span>`:''}${l.type==='ref'?`<span class="pill" data-copy="${esc(l.f.copy)}">Copy</span>`:''}${ppl}${r?`<span class="rel">↳ ${esc(r.text.length>48?r.text.slice(0,46)+'…':r.text)} · ${fD(r.ts)}</span>`:''}</div>`:''}</div>`;
+  return `<div class="me ${l.done?'done':''} ${fade?'faded':''}" data-id="${l.id}"><div class="tx">${tx}</div>${(mn||t||ppl||r)?`<div class="mn">${mn?`<span class="v ${['math','ask','live','transfer'].includes(l.type)?'strong':''}">${esc(fade?'faded · tap to keep':mn)}</span>`:''}${t?`<span class="pill" data-th="${t.id}">${esc(t.name)}</span>`:''}${l.type==='ref'?`<span class="pill" data-copy="${esc(l.f.copy)}">Copy</span>`:''}${remindable(l)&&!l.done?`<span class="pill" data-cal="${l.id}">Remind me</span>`:''}${ppl}${r?`<span class="rel">↳ ${esc(r.text.length>48?r.text.slice(0,46)+'…':r.text)} · ${fD(r.ts)}</span>`:''}</div>`:''}${connHTML(l,now)}</div>`;
 }
+function connHTML(l,now){const c=l.conn&&S.lines.find(x=>x.id===l.conn);if(!c)return '';
+  const st=S.acted['cn'+l.id];if(st==='Not now')return '';const open=isOpen(c,now)||st==='Done';
+  if(!open&&!st)return '';const old=now-l.ts>36*3600e3;
+  return `<div class="ink ${old||st?'old':''}" style="margin:6px 0 2px"><span class="dot"></span><div><div>↳ ${esc(c.text)} · ${fD(c.ts)}</div><div style="font-size:13px;opacity:.75">${st==='Done'?'Marked done.':'Still on your list.'}</div>${st?'':`<div class="acts"><span class="ab" data-cn="${l.id}" data-a="Done">Done</span><span class="ab" data-cn="${l.id}" data-a="Not now">Not now</span></div>`}</div></div>`}
+function remindable(l){return (['event','task'].includes(l.type)&&l.f.dt)||(['credit','debt'].includes(l.type)&&whenMonth(l.f.when)!==null)}
+function remindAt(l){if(l.f.dt){const d=new Date(l.f.dt.date);if(!l.f.dt.hasTime)d.setHours(9,0,0,0);return d}const mo=whenMonth(l.f.when);let d=new Date(l.ts.getFullYear(),mo,1,10);if(d<=l.ts)d=new Date(l.ts.getFullYear()+1,mo,1,10);return d}
+function icsDate(d){const p=n=>String(n).padStart(2,'0');return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'T'+p(d.getHours())+p(d.getMinutes())+'00'}
+function addToCalendar(l){const d=remindAt(l),e=new Date(+d+30*60e3);const title=(l.type==='credit'||l.type==='debt')?meaning(l,NOW()).split(' · ')[0]:l.text;
+  const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Memento//alpha//EN','BEGIN:VEVENT','UID:memento-'+l.id+'-'+(+l.ts)+'@memento','DTSTAMP:'+icsDate(new Date()),'DTSTART:'+icsDate(d),'DTEND:'+icsDate(e),'SUMMARY:'+title.replace(/[,;\\]/g,' '),'DESCRIPTION:From Memento: '+l.text.replace(/[,;\\]/g,' '),'BEGIN:VALARM','TRIGGER:-PT0M','ACTION:DISPLAY','DESCRIPTION:'+title.replace(/[,;\\]/g,' '),'END:VALARM','END:VEVENT','END:VCALENDAR'].join('\r\n');
+  const url=URL.createObjectURL(new Blob([ics],{type:'text/calendar'}));const a=document.createElement('a');a.href=url;a.download='memento-reminder.ics';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);toast('Opening Calendar')}
 function voiceHTML(v,old){
   return `<div class="ink ${old?'old':''}"><span class="dot"></span><div><div>${esc(v.text)}</div>${v.acts.length?`<div class="acts">${v.acts.map(a=>`<span class="ab ${S.acted[v.key+a]?'on':''}" data-k="${v.key}" data-a="${esc(a)}" data-ref="${v.ref||''}">${esc(a)}</span>`).join('')}</div>`:''}</div></div>`;
 }
@@ -499,6 +529,7 @@ function help(){openOv('How to use Memento',`
   <div class="row"><span>dentist tue 5pm</span><span class="muted">event</span></div>
   <div class="row"><span>groceries 1850</span><span class="muted">money</span></div>
   <div class="row"><span>rent 95000 / 3</span><span class="muted">maths</span></div>
+  <div class="row"><span>try the new sushi place, later: dinner sat?</span><span class="muted">brings it back</span></div>
   <div class="row"><span>call mom tonight</span><span class="muted">to do</span></div>
   <div class="row"><span>Ali brings cake friday</span><span class="muted">someone else's to do</span></div>
   <div class="row"><span>Bilal paid 1200</span><span class="muted">received</span></div>
@@ -525,7 +556,8 @@ const inp=document.getElementById('in');
 inp.addEventListener('input',()=>{const v=inp.value.trim(),lv=document.getElementById('live');if(!v){lv.innerHTML='';return}
   const l=build(v,NOW());uid--;if(l.type==='ask')l.answer=answer(v,NOW());
   let j='';if(!['ask','live','secret','note','message','hold','credit','debt','invoice','payment','signal'].includes(l.type)){const kw=keywords(v);const t=Object.values(S.threads).find(t=>{const f=tLines(t.id)[0];return f&&[...keywords(f.text)].some(k=>kw.has(k))});if(t)j=' · with '+t.name}
-  let r='';if(!j&&!['ask','secret'].includes(l.type)){const x=related(v,-1);if(x)r=' · ↳ '+(x.text.length>34?x.text.slice(0,32)+'…':x.text)}
+  let r='';if(!NOCONN.includes(l.type)){const c=findConn(v,NOW(),-1);if(c)r=' · ↳ '+(c.text.length>34?c.text.slice(0,32)+'…':c.text)}
+  if(!r&&!j&&!['ask','secret'].includes(l.type)){const x=related(v,-1);if(x)r=' · ↳ '+(x.text.length>34?x.text.slice(0,32)+'…':x.text)}
   const mn=meaning(l,NOW());lv.innerHTML=(mn?'<b>'+esc(mn)+'</b>':`<span>${TL[l.type]}</span>`)+esc(j+r)});
 const submit=()=>{add(inp.value);inp.value='';document.getElementById('live').innerHTML=''};
 inp.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();submit()}});
@@ -539,6 +571,9 @@ document.querySelector('.app').addEventListener('click',e=>{
   if(t.dataset.o){const o=t.dataset.o;if(o==='salary'){askSalary();return}if(o==='export'){exportText();return}if(o==='help'){help();return}({coming:ovComing,money:ovMoney,threads:ovThreads,people:ovPeople})[o]();return}
   if(t.id==='back'){closeOv();return}
   if(t.tagName==='A')return;
+  if(t.dataset.cal){e.stopPropagation();const l=S.lines.find(x=>x.id==t.dataset.cal);if(l)addToCalendar(l);return}
+  if(t.dataset.cn){e.stopPropagation();const l=S.lines.find(x=>x.id==t.dataset.cn);const a=t.dataset.a;S.acted['cn'+t.dataset.cn]=a;const c=l&&S.lines.find(x=>x.id===l.conn);
+    if(c&&a==='Done')c.done=true;if(c&&a==='Not now')S.snooze[c.id]=+NOW()+30*864e5;save();render();return}
   if(t.dataset.copy){e.stopPropagation();try{navigator.clipboard.writeText(t.dataset.copy);toast('Copied')}catch(err){toast('Could not copy')}return}
   if(t.dataset.th){e.stopPropagation();ovThread(t.dataset.th);return}
   const card=t.closest('[data-th]');if(card&&card.classList.contains('card')){ovThread(card.dataset.th);return}
@@ -564,6 +599,9 @@ setInterval(()=>{const st=document.getElementById('stream');if(st.scrollTop+st.c
 // ---------- start ----------
 document.getElementById('ver').textContent='· alpha '+VERSION.replace(/\.0$/,'');
 load();persist();render();inp.focus();
+(function welcome(){let seen=null;try{seen=localStorage.getItem('memento-welcomed')}catch(e){}if(seen)return;
+  const bg=document.getElementById('sheetbg');document.getElementById('sheet').innerHTML=`<b>Welcome to Memento</b><p class="muted" style="line-height:1.6">This is an early test version.<br>· Write anything, the way you text yourself.<br>· Your notes stay on this phone. Nothing is sent anywhere.<br>· <b>Use fake passwords.</b> Secrets are hidden, not yet locked.<br>· Back up with Export (menu) once a week.<br>· Something wrong? Tap the line, then "Not right?", and paste it in the research group.</p><button class="btn dark" id="ok">Got it</button>`;
+  bg.style.display='flex';document.getElementById('ok').onclick=()=>{try{localStorage.setItem('memento-welcomed','1')}catch(e){}bg.style.display='none';inp.focus()}})();
 // ---------- updates: look for a newer version on open ----------
 async function checkUpdate(){
   try{if(location.protocol==='file:'||inp.value.trim())return;
