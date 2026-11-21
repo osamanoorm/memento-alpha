@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Memento</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Memento">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+:root{--ink:#111;--mute:#8d8d88;--line:#ececE7;--soft:#f3f3ef;--sig:#CCFF00}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#fff;color:var(--ink);font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif}
+.app{max-width:560px;margin:0 auto;height:100dvh;display:flex;flex-direction:column;position:relative;padding-top:env(safe-area-inset-top)}
+.top{display:flex;justify-content:space-between;align-items:center;padding:12px 18px 8px}
+.brand{font-weight:700;letter-spacing:.02em}
+.sync{font-size:11px;color:var(--mute);margin-left:8px;font-weight:400;letter-spacing:0}
+.menu{border:0;background:none;font-size:22px;cursor:pointer;padding:0 4px;color:var(--ink)}
+.stream{flex:1;overflow-y:auto;padding:0 18px 12px}
+.day{font-size:11px;color:var(--mute);text-align:center;margin:18px 0 6px;letter-spacing:.08em;text-transform:uppercase}
+.me{padding:8px 2px;cursor:pointer;border-radius:8px}
+.me:active{background:#fafaf7}
+.tx{white-space:pre-wrap;word-break:break-word}
+.me.done .tx{color:var(--mute);text-decoration:line-through}
+.mn{font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--mute);margin-top:3px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.mn .v.strong{color:var(--ink)}
+.pill{border:1px solid var(--line);border-radius:999px;padding:0 7px;font-size:11px;color:#555;cursor:pointer;background:#fff;font-family:-apple-system,BlinkMacSystemFont,Inter,sans-serif}
+.rel{color:#777;font-style:italic}
+.faded{opacity:.45}
+.ink{display:flex;gap:10px;align-items:flex-start;margin:10px 0;padding:10px 12px;background:#111;color:#fff;border-radius:14px;font-size:15px}
+.ink .dot{width:8px;height:8px;border-radius:50%;background:var(--sig);margin-top:8px;flex:none}
+.ink.old{background:var(--soft);color:#333}.ink.old .dot{background:#bbb}
+.acts{margin-top:6px;display:flex;gap:6px;flex-wrap:wrap}
+.ab{border:1px solid #444;background:transparent;color:inherit;border-radius:8px;padding:2px 10px;font-size:12px;cursor:pointer}
+.ink.old .ab{border-color:#ccc}
+.ab.on{background:var(--sig);color:#111;border-color:var(--sig)}
+.mask{letter-spacing:.15em}
+.composer{border-top:1px solid var(--line);padding:6px 12px calc(10px + env(safe-area-inset-bottom));background:#fff}
+.live{min-height:18px;font:12px/1.4 ui-monospace,Menlo,monospace;color:var(--mute);padding:2px 4px 6px}
+.live b{color:var(--ink);font-weight:600}
+.inrow{display:flex;gap:8px}
+#in{flex:1;border:1px solid var(--line);border-radius:14px;padding:11px 12px;font:inherit;outline:none}
+#in:focus{border-color:#aaa}
+.send{border:0;background:var(--ink);color:#fff;border-radius:14px;padding:0 15px;font:inherit;cursor:pointer}
+.ov{position:absolute;inset:0;background:#fff;display:none;flex-direction:column;z-index:5;padding-top:env(safe-area-inset-top)}
+.ov .hd{padding:12px 18px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center}
+.ov .hd b{flex:1}
+.ov .bd{flex:1;overflow-y:auto;padding:8px 18px 24px}
+.vb{border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 11px;font-size:13px;cursor:pointer}
+.mi{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;padding:14px 2px;font:inherit;cursor:pointer;color:var(--ink)}
+.sec{font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 4px}
+.card{border:1px solid var(--line);border-radius:12px;padding:12px;margin:8px 0}
+.big{font-size:26px;font-weight:700}
+.muted{color:var(--mute);font-size:13px}
+.row{display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:3px 0}
+.sheetbg{position:absolute;inset:0;background:rgba(0,0,0,.25);display:none;align-items:flex-end;z-index:9}
+.sheet{background:#fff;width:100%;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}
+.sheet textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:8px;font:inherit;resize:none}
+.tps{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0}
+.tp{border:1px solid var(--line);border-radius:999px;padding:3px 9px;font-size:12px;cursor:pointer}
+.tp.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 11px;font:inherit;font-size:14px;cursor:pointer;margin:4px 4px 0 0;color:var(--ink)}
+.btn.dark{background:var(--ink);color:#fff;border-color:var(--ink)}
+select{font:inherit;font-size:14px;padding:6px;border-radius:8px;border:1px solid var(--line)}
+.toast{position:absolute;left:50%;bottom:100px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:8px 14px;border-radius:10px;font-size:13px;display:none;z-index:20;max-width:85%;text-align:center}
+.empty{color:var(--mute);text-align:center;margin-top:18vh;font-size:15px;line-height:1.7}
+.ex{display:inline-block;border:1px solid var(--line);border-radius:8px;padding:3px 9px;margin:4px 3px 0 0;font-size:13px;cursor:pointer;color:#444}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top"><div class="brand">Memento<span class="sync" id="ver"></span></div><button class="menu" id="menuBtn" aria-label="Menu">☰</button></div>
+  <div class="stream" id="stream"></div>
+  <div class="composer"><div class="live" id="live"></div>
+    <div class="inrow"><input id="in" placeholder="Write anything..." autocomplete="off" autocapitalize="sentences" enterkeyhint="done"><button class="send" id="send" aria-label="Add">↑</button></div></div>
+  <div class="ov" id="ov"><div class="hd"><span class="vb" id="back">Back</span><b id="ovt"></b></div><div class="bd" id="ovb"></div></div>
+  <div class="sheetbg" id="sheetbg"><div class="sheet" id="sheet"></div></div>
+  <div class="toast" id="toast"></div>
+</div>
+<script>
+const VERSION='0.1.0';
+// ---------- basics ----------
+const WDA={sun:0,sunday:0,mon:1,monday:1,tue:2,tues:2,tuesday:2,wed:3,wednesday:3,thu:4,thur:4,thurs:4,thursday:4,fri:5,friday:5,sat:6,saturday:6,jumma:5,juma:5,jumeraat:4,itwaar:0,itwar:0,mangal:2,budh:3};
+const MON={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,sept:8,oct:9,nov:10,dec:11};
+const MS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],DS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const sod=d=>{const x=new Date(d);x.setHours(0,0,0,0);return x};
+const addD=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+const addM=(d,n)=>new Date(+d+n*60e3);
+const at=(d,h,m=0)=>{const x=new Date(d);x.setHours(h,m,0,0);return x};
+const fN=n=>Math.round(n).toLocaleString('en-US');
+const rs=n=>'Rs '+fN(n);
+const fD=d=>DS[d.getDay()]+' '+d.getDate()+' '+MS[d.getMonth()];
+const fT=d=>{let h=d.getHours(),m=d.getMinutes();const a=h>=12?'PM':'AM';h=h%12||12;return h+':'+String(m).padStart(2,'0')+' '+a};
+const cap=s=>s?s.charAt(0).toUpperCase()+s.slice(1):s;
+const num=(s,k)=>parseFloat(String(s).replace(/,/g,''))*(k?1000:1);
+const reEsc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+const NOTP=new Set('hostel team friends family colleagues girls boys kids client clients office class classmates everyone guys squad sir madam miss mr mrs dr the'.split(' '));
+const STOP=new Set('with this that have from about tonight today tomorrow morning evening noon people persons paid sent gave brings bring will need needs remember next week weeks month months also just some more each into your them they their then than when what where which while should could would must call text email mail send pick book check order cancel review reply return renew prepare finish submit clean schedule remind much total spent spend owes owe dont forget have apply register collect visit file udhaar udhar bags invoice due bill hours rate'.split(' '));
+const TASKV=/^(call|text|email|mail|buy|get|pick|book|pay|send|remind|ask|renew|fix|clean|submit|finish|return|cancel|schedule|order|check|review|prepare|reply|follow up|apply|register|collect|visit|file|todo|to do)\b/i;
+const CATS={food:/\b(burger|pizza|lunch|dinner|breakfast|coffee|tea|chai|milkshake|biryani|food|restaurant|groceries|grocery|kfc|mcdonald|snacks|cake|shawarma)\b/,transport:/\b(fuel|petrol|uber|careem|indrive|taxi|rickshaw|bus|train|flight|parking|toll)\b/,bills:/\b(electricity|gas bill|bill|internet|rent|water|phone|mobile|subscription|netflix|spotify|figma)\b/,home:/\b(maid|uniform|school|fees|medicine|pharmacy|doctor|pediatrician)\b/,stay:/\b(hotel|airbnb|stay)\b/};
+const catOf=t=>{for(const k in CATS)if(CATS[k].test(t))return k;return null};
+const RATES={usd:1,myr:.225,pkr:.00357,eur:1.07,gbp:1.26,aed:.2723,sar:.2667,inr:.0118};
+const RATES_LY={usd:1,myr:.212,pkr:.00359,eur:1.09,gbp:1.27,aed:.2723,sar:.2667,inr:.0120};
+
+// ---------- dates ----------
+function parseDT(lower,base){
+  let tk=[],off=null,abs=null,h=null,mi=0,m;
+  if((m=lower.match(/\b(\d{1,2})(?::(\d{2}))?\s?(am|pm)\b/))){h=(+m[1])%12+(m[3]==='pm'?12:0);mi=m[2]?+m[2]:0;tk.push(m[0])}
+  else if((m=lower.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/))){h=+m[1];mi=+m[2];tk.push(m[0])}
+  if((m=lower.match(/\b(day after tomorrow|parson)\b/))){off=2;tk.push(m[0])}
+  else if((m=lower.match(/\b(tomorrow|tmrw|tmr|kal)\b/))){off=1;tk.push(m[0])}
+  else if((m=lower.match(/\btonight\b/))){off=0;if(h===null)h=20;tk.push(m[0])}
+  else if((m=lower.match(/\b(today|aaj)\b/))&&!/\bvs\b/.test(lower)){off=0;tk.push(m[0])}
+  else if((m=lower.match(/\bnext week\b/))){off=7;tk.push(m[0])}
+  else if((m=lower.match(/\bin (\d+) (days?|weeks?)\b/))){off=(+m[1])*(m[2][0]==='w'?7:1);tk.push(m[0])}
+  else if((m=lower.match(/\b(\d{1,2})(?:st|nd|rd|th)?\s(jan|feb|mar|apr|may|jun|jul|aug|sept|sep|oct|nov|dec)[a-z]*\b/))||(m=lower.match(/\b(jan|feb|mar|apr|may|jun|jul|aug|sept|sep|oct|nov|dec)[a-z]*\s(\d{1,2})(?:st|nd|rd|th)?\b/))){
+    const d=isNaN(+m[1])?+m[2]:+m[1],mo=MON[isNaN(+m[1])?m[1]:m[2]];abs=new Date(base.getFullYear(),mo,d);if(abs<sod(base))abs.setFullYear(abs.getFullYear()+1);tk.push(m[0])}
+  else if((m=lower.match(/\b(next\s)?(sunday|monday|tuesday|wednesday|thursday|friday|saturday|jumeraat|jumma|juma|itwaar|itwar|mangal|budh|tues|thurs|thur|sun|mon|tue|wed|thu|fri|sat)\b/))){let df=(WDA[m[2]]-base.getDay()+7)%7;if(df===0&&m[1])df=7;off=df;tk.push(m[0])}
+  if((m=lower.match(/\bnoon\b/))&&h===null){h=12;tk.push(m[0])}
+  if((m=lower.match(/\bmorning\b/))&&h===null&&(off!==null||abs)){h=9;tk.push(m[0])}
+  if((m=lower.match(/\bevening\b/))&&h===null&&(off!==null||abs)){h=18;tk.push(m[0])}
+  if(off===null&&!abs&&h===null)return null;
+  let d=abs?new Date(abs):addD(sod(base),off===null?0:off);
+  if(h!==null){d.setHours(h,mi,0,0);if(off===null&&!abs&&d<base)d=addD(d,1)}
+  return {date:d,hasTime:h!==null,tk};
+}
+const fDT=dt=>fD(dt.date)+(dt.hasTime?', '+fT(dt.date):'');
+function evalExpr(str){
+  let s=str.replace(/(\d[\d,]*(?:\.\d+)?)k\b/gi,(m,a)=>String(num(a,1))).replace(/(\d)\s?h(?:rs|ours)?\b/gi,'$1').replace(/,/g,'').replace(/[x×]/gi,'*').replace(/÷/g,'/');
+  if(!/^[\d.+\-*\/\s()]+$/.test(s))return null;try{const v=Function('"use strict";return ('+s+')')();return isFinite(v)?v:null}catch(e){return null}
+}
+function namesIn(text){
+  const out=new Set();const t=text.replace(/'s\b/g,''),w=t.split(/\s+/);
+  w.forEach((x,i)=>{const c=x.replace(/[^A-Za-z]/g,'');if(c.length<3)return;const lc=c.toLowerCase();
+    if(/^[A-Z][a-z]+$/.test(c)&&!(lc in WDA)&&MON[lc.slice(0,3)]===undefined&&!CATS.food.test(lc)&&(i>0||/^(paid|sent|gave|brings|will|to|should|needs|returned|owes)$/i.test(w[1]||'')||/udhaa?r/i.test(t)))out.add(c)});
+  let m=t.match(/\bwith ([a-z]+)\b/i);if(m)out.add(cap(m[1].toLowerCase()));
+  return [...out].filter(x=>!NOTP.has(x.toLowerCase()));
+}
+function keywords(text){
+  const lw=text.toLowerCase().replace(/'s\b/g,'');
+  const k=new Set(lw.split(/[^a-z]+/).filter(x=>x.length>=4&&!STOP.has(x)&&!(x in WDA)&&MON[x.slice(0,3)]===undefined));
+  namesIn(text).forEach(n=>k.add(n.toLowerCase()));return k;
+}
+
+// ---------- parse ----------
+function parse(text,base,prevVal){
+  const lower=text.toLowerCase().trim();const f={};let m;
+  f.dt=parseDT(lower,base);
+  let st=lower;if(f.dt)f.dt.tk.forEach(t=>st=st.replace(t,' '));
+  f.people=namesIn(text);
+  if(/\b(salary|tankhwah|tankhwa)\b/.test(lower)&&/\b(next|on|after|when|pe|par)\b/.test(lower)&&!/\b(came|received|credited|aya|aagayi|aa gayi|arrived)\b/.test(lower))f.trigger='salary';
+  if(/\b(salary|tankhwah|tankhwa)\s+(came|received|credited|aya|aagayi|aa gayi|arrived)\b|\bgot paid\b/.test(lower)){f.type='signal';return f}
+  if((m=lower.match(/\b(?:send|transfer|move)\s+(?:rs\.?\s?)?(\d[\d,]*(?:\.\d+)?)(k)?\s+from\s+([a-z]+)\s+to\s+([a-z]+)/))){f.type='transfer';f.amount=num(m[1],m[2]);f.from=m[3].toUpperCase().length<=4?m[3].toUpperCase():cap(m[3]);f.to=m[4].toUpperCase().length<=4?m[4].toUpperCase():cap(m[4]);return f}
+  if(/^(how much|how many|who owes|what do i owe|what's coming|whats coming|what is coming|total)\b/.test(lower)||/^\?/.test(lower)){f.type='ask';return f}
+  if((m=text.match(/\b(password|passcode|pwd|pin|otp|login)\b/i))||(/\S+@\S+\.\S+\s+\S{4,}/.test(text)&&!/\b(meet|call|send)\b/i.test(lower))){
+    const em=text.match(/\S+@\S+\.\S+/);const toks=text.split(/\s+/).filter(x=>x.length>=4&&!/^(password|passcode|pass|pwd|pin|otp|login)$/i.test(x)&&x!==(em&&em[0])&&(/\d/.test(x)||/[^a-z]/i.test(x)||x.length>=6)&&!/^[a-z]+$/i.test(x));
+    if(toks.length){f.type='secret';f.people=[];f.secret=toks;f.label=text.replace(/\S+@\S+\.\S+/,'').split(/\s+/).filter(x=>!toks.includes(x)).join(' ').trim();f.email=em&&em[0];return f}
+  }
+  if((m=text.match(/(https?:\/\/\S+|www\.\S+|\b[\w-]+\.(?:com|org|net|io|pk|co|app|dev|example|edu)(?:\/\S*)?)/i))){f.type='link';f.url=m[1];f.label=text.replace(m[1],'').trim();return f}
+  if((m=lower.match(/(\d+(?:\.\d+)?)\s*([a-z]{3})\s+(?:to|in)\s+([a-z]{3})\b/))&&RATES[m[2]]&&RATES[m[3]]){
+    const v=num(m[1])*RATES[m[2]]/RATES[m[3]],ly=num(m[1])*RATES_LY[m[2]]/RATES_LY[m[3]];
+    f.type='live';f.answer=`${m[1]} ${m[2].toUpperCase()} ≈ ${v.toFixed(2)} ${m[3].toUpperCase()} (rough offline rate)`+(/last year|vs/.test(lower)?` · ${ly.toFixed(2)} a year ago (${(v>=ly?'+':'')+((v/ly-1)*100).toFixed(1)}%)`:'');return f}
+  if((m=lower.match(/^(?:weather|how'?s the weather)(?:\s+in)?\s+([a-z]+)/))){f.type='note';return f}
+  if((m=text.match(/^(?:hi|hello|salam|salaam|wish|congratulate|tell|message|msg|text|whatsapp)\b.*?\bto\s+([A-Za-z]+)/i))||(m=text.match(/^(?:hi|hello|salam|salaam)\s+([A-Za-z]+)/i))){f.type='message';f.person=cap(m[1].toLowerCase());if(!f.people.includes(f.person))f.people.push(f.person);return f}
+  if((m=text.match(/^(?:for|send to|forward to|share with)\s+([A-Za-z]+)\s*[:,\-]?\s*(.*)$/i))){f.type='hold';f.person=cap(m[1].toLowerCase());f.body=m[2];if(!f.people.includes(f.person))f.people.push(f.person);return f}
+  if((m=text.match(/^([A-Za-z][a-z]+)\s+(paid|sent|gave|returned|transferred)\s+(?:me\s+|back\s+)*(?:rs\.?\s?)?(\d[\d,]*(?:\.\d+)?)(k)?/i))&&!/^(i|we)$/i.test(m[1])){f.type='payment';f.person=cap(m[1].toLowerCase());f.amount=num(m[3],m[4]);return f}
+  if((m=lower.match(/^(?:i owe|owe)\s+([a-z]+)\s+(?:rs\.?\s?)?(\d[\d,]*)(k)?/))||(m=lower.match(/^borrowed\s+(?:rs\.?\s?)?(\d[\d,]*)(k)?\s+from\s+([a-z]+)/))){
+    const p=isNaN(num(m[1]))?m[1]:m[3];const a=isNaN(num(m[1]))?num(m[2],m[3]):num(m[1],m[2]);f.type='debt';f.person=cap(p);f.amount=a;f.people.push(f.person);return f}
+  const am=st.match(/(?:rs\.?\s?|pkr\s?|\$\s?)?(\d[\d,]*(?:\.\d+)?)(k)?\b(?!\s?(?:people|persons|pax|bags?|kg|pcs|pieces))/i);
+  const amount=am?num(am[1],am[2]):null;
+  if(/\b(udhaa?r|owes me|lent|loan to|on credit|baqi)\b/.test(lower)&&amount!=null){const all=st.match(/\d[\d,]*(?:\.\d+)?k?/g)||[];f.type='credit';f.amount=num(all[all.length-1].replace(/k/i,''),/k/i.test(all[all.length-1]));f.person=f.people[0]||cap(lower.split(' ')[0]);if(!f.people.includes(f.person))f.people.unshift(f.person);return f}
+  if(/\binvoice\b/.test(lower)&&amount!=null){f.type='invoice';f.amount=amount;const pre=text.split(/\binvoice\b/i)[0].trim();f.person=pre?pre.split(/\s+/).map(w=>cap(w.toLowerCase())).join(' '):(f.people[0]||'Client');f.people=[f.person];return f}
+  if(/\b(due|bill|fees)\b/.test(lower)&&amount!=null&&f.dt){f.type='bill';f.amount=amount;f.cat=catOf(lower)||'bills';return f}
+  let mm;
+  if((mm=st.match(/^\s*([+\-*x×\/÷])\s*(\d[\d,]*(?:\.\d+)?k?)/i))&&prevVal!=null){const v=evalExpr(prevVal+mm[1]+mm[2]);if(v!=null){f.type='math';f.math={value:v,op:mm[1],n:num(mm[2].replace(/k/i,''),/k/i.test(mm[2])),fromPrev:true};return f}}
+  if((mm=st.match(/(\d+(?:\.\d+)?)\s?%\s?of\s(\d[\d,]*(?:\.\d+)?k?)/i))){f.type='math';f.math={value:num(mm[1])/100*evalExpr(mm[2]),op:'%'};return f}
+  if((mm=st.match(/(\d[\d,]*(?:\.\d+)?k?(?:\s?h(?:rs|ours)?)?(?:\s*[+\-*x×\/÷]\s*\d[\d,]*(?:\.\d+)?k?(?:\s?h(?:rs|ours)?)?)+)/i))){const v=evalExpr(mm[1]);if(v!=null){f.type='math';f.math={value:v,op:(mm[1].match(/[+\-*x×\/÷]/)||[''])[0]};f.budget=/\b(trip|budget|plan|wedding|holiday)\b/.test(lower);return f}}
+  if(/\b(allowance|salary|received|got paid|income|bonus)\b/.test(lower)&&amount!=null){f.type='income';f.amount=amount;return f}
+  const as=text.match(/^([A-Za-z][a-z]+)\s+(brings|will bring|to bring|will|should|needs to)\b/i);
+  f.assignee=as&&!/^(i|we|you)$/i.test(as[1])?cap(as[1].toLowerCase()):null;
+  if((f.dt&&/\b(due|deadline|submission)\b/.test(lower))||TASKV.test(lower)||/\b(need to|remember to|don'?t forget|have to)\b/.test(lower)||f.assignee){f.type='task';return f}
+  if(f.dt){f.type='event';if(amount!=null)f.amount=amount;f.film=/\b(avengers|movie|film|cinema|premiere|screening|marvel|batman|dune|bond)\b/.test(lower);return f}
+  if(amount!=null){f.type='money';f.amount=amount;f.cat=catOf(lower);const tm=lower.match(/^(.*?)\s*(?:total|=)\s/);if(tm&&tm[1].includes(','))f.items=tm[1].split(',').map(x=>x.trim()).filter(Boolean);return f}
+  f.type='note';return f;
+}
+const val=l=>l.f.math?l.f.math.value:(l.f.amount!=null?l.f.amount:null);
+
+// ---------- threads ----------
+const tLines=id=>S.lines.filter(l=>l.thread===id).sort((a,b)=>a.ts-b.ts);
+function clean(l){let t=l.text;if(l.f.dt)l.f.dt.tk.forEach(x=>t=t.replace(new RegExp(reEsc(x),'i'),''));t=t.replace(/\b(due|by)\b/gi,'').replace(/(rs\.?\s?)?\d[\d,]*(\.\d+)?k?/gi,'').replace(/[+\-*x×\/÷=]/g,' ').replace(/\s+/g,' ').trim();return cap(t||l.text)}
+function newThread(first){const id='t'+(uid++);S.threads[id]={id,name:clean(first),created:first.ts};return id}
+function tSum(id){
+  const L=tLines(id);let spent=0,split=null,recv=0,payers=[],budget=null,ev=null,tasks=[];
+  L.forEach(l=>{const f=l.f;
+    if(['money','event','bill'].includes(l.type)&&f.amount)spent+=f.amount;
+    if(l.type==='math'&&f.math&&f.math.fromPrev&&/[\/÷]/.test(f.math.op)){split={n:f.math.n,share:f.math.value,at:l.ts}}
+    if(l.type==='math'&&f.budget&&!budget)budget=f.math.value;
+    if(l.type==='payment'&&l.splitPay){recv+=f.amount;payers.push(f.person)}
+    if(l.type==='event'&&f.dt)ev=l;
+    if(l.type==='task')tasks.push(l);
+  });
+  let owed=null,left=null,pleft=0;if(split){owed=split.share*(split.n-1);left=Math.max(0,owed-recv);pleft=Math.max(0,split.n-1-payers.length)}
+  return {L,spent,split,recv,payers,owed,left,pleft,budget,ev,tasks};
+}
+function assignThread(l){
+  const prev=S.lines.filter(x=>x!==l&&x.ts<=l.ts).sort((a,b)=>b.ts-a.ts)[0];
+  if(['ask','live','secret','note','message','hold','credit','debt','invoice'].includes(l.type))return null;
+  if(l.type==='payment'){
+    if(personBal(l.f.person,l.ts)>0)return null;
+    const open=Object.keys(S.threads).map(id=>({id,s:tSum(id)})).filter(o=>o.s.left>0).sort((a,b)=>S.threads[b.id].created-S.threads[a.id].created)[0];
+    if(open){l.splitPay=true;return open.id}return null;
+  }
+  if(l.type==='math'&&l.f.math&&l.f.math.fromPrev&&prev)return prev.thread||(prev.thread=newThread(prev));
+  const kw=keywords(l.text);let best=null,score=0;
+  Object.values(S.threads).forEach(t=>{const first=tLines(t.id)[0];if(!first)return;const tk=keywords(first.text);let s=0;kw.forEach(k=>{if(tk.has(k))s++});if(s>score){score=s;best=t.id}});
+  if(best)return best;
+  const cand=S.lines.filter(x=>x!==l&&!x.thread&&x.ts<=l.ts&&(l.ts-x.ts)<45*864e5&&(['event','task','bill'].includes(x.type)||(x.type==='math'&&x.f.budget))).find(x=>{const k2=keywords(x.text);return [...kw].some(k=>k2.has(k))});
+  if(cand){cand.thread=newThread(cand);return cand.thread}
+  if(l.type==='math'&&l.f.budget)return newThread(l);
+  if(prev&&(l.ts-prev.ts)<15*60e3&&(l.type==='money'||(l.type==='task'&&l.f.assignee))){if(prev.thread)return prev.thread;if(prev.type==='event'||(prev.type==='math'&&prev.f.budget)){prev.thread=newThread(prev);return prev.thread}}
+  return null;
+}
+function personBal(p,until){
+  let b=0;S.lines.forEach(l=>{if(until&&l.ts>until)return;const f=l.f;if(!f||f.person!==p)return;
+    if(l.type==='credit'||l.type==='invoice')b+=f.amount;
+    if(l.type==='payment'&&!l.splitPay)b-=f.amount;
+    if(l.type==='debt'&&!l.done)b-=f.amount;});
+  return b;
+}
+const allPeople=()=>{const s=new Set();S.lines.forEach(l=>(l.f.people||[]).forEach(p=>s.add(p)));return [...s].sort()};
+
+// ---------- answers ----------
+function spendIn(from,to,filter){return S.lines.filter(l=>['money','event'].includes(l.type)&&l.f.amount&&l.ts>=from&&l.ts<=to&&(!filter||filter(l)))}
+function weekStart(d){return addD(sod(d),-((d.getDay()+6)%7))}
+function answer(text,now){
+  const lw=text.toLowerCase();
+  if(/^\?/.test(lw)&&!/how much|owe|coming|total/.test(lw))return search(lw.replace(/^\?\s*/,''),now);
+  if(/coming/.test(lw)){const u=upcoming(now).slice(0,4);return u.length?u.map(x=>x.s).join(' · '):'Nothing ahead.'}
+  if(/owe/.test(lw)&&/what do i owe|i owe/.test(lw)){const d=allPeople().map(p=>[p,personBal(p,now)]).filter(x=>x[1]<0);return d.length?d.map(x=>`${x[0]} ${rs(-x[1])}`).join(' · '):'You owe nobody.'}
+  if(/owe/.test(lw)){
+    const out=[];Object.keys(S.threads).forEach(id=>{const s=tSum(id);if(s.left>0)out.push(`${S.threads[id].name}: ${s.pleft} owe you ${rs(s.left)}`)});
+    allPeople().forEach(p=>{const b=personBal(p,now);if(b>0)out.push(`${p}: ${rs(b)}`)});
+    const who=allPeople().find(p=>lw.includes(p.toLowerCase()));if(who)return `${who} owes you ${rs(Math.max(0,personBal(who,now)))}`;
+    return out.length?out.join(' · '):'Nobody owes you anything.';
+  }
+  let from=new Date(2000,0,1),lab='';
+  if(/this month/.test(lw)){from=new Date(now.getFullYear(),now.getMonth(),1);lab=' this month'}else if(/this week/.test(lw)){from=weekStart(now);lab=' this week'}else if(/today/.test(lw)){from=sod(now);lab=' today'}
+  const cat=Object.keys(CATS).find(c=>lw.includes(c))||catOf(lw);
+  const ign=new Set('how much many total spent spend on did i what this month week today the for in all'.split(' '));
+  const kws=cat?[]:lw.replace(/[^a-z ]/g,' ').split(/\s+/).filter(w=>w.length>2&&!ign.has(w));
+  const L=spendIn(from,now,l=>cat?(l.f.cat===cat||catOf(l.text.toLowerCase())===cat):(!kws.length||kws.some(k=>l.text.toLowerCase().includes(k)||(l.thread&&S.threads[l.thread].name.toLowerCase().includes(k)))));
+  return `${rs(L.reduce((a,l)=>a+l.f.amount,0))}${cat?' on '+cat:kws.length?' on '+kws.join(' '):''}${lab} · ${L.length} ${L.length===1?'line':'lines'}`;
+}
+function search(q,now){const words=q.split(/\s+/).filter(w=>w.length>1);const cat=Object.keys(CATS).find(c=>q.includes(c));
+  const hits=S.lines.filter(l=>l.type!=='ask'&&l.type!=='secret'&&l.ts<=now&&(words.every(w=>l.text.toLowerCase().includes(w))||(cat&&(l.f.cat===cat||catOf(l.text.toLowerCase())===cat)))).sort((a,b)=>b.ts-a.ts).slice(0,4);
+  return hits.length?hits.map(l=>'"'+l.text+'" ('+fD(l.ts)+')').join(' · '):'Nothing found for "'+q+'"';}
+function related(text,excludeId){const kw=[...keywords(text)];if(!kw.length)return null;let best=null,score=0;
+  S.lines.forEach(l=>{if(l.id===excludeId||['ask','secret','signal'].includes(l.type))return;const k2=keywords(l.text);let s=0;kw.forEach(k=>{if(k2.has(k))s++});if(s>score){score=s;best=l}});return best}
+
+function ord(n){const s=(n%100>=11&&n%100<=13)?'th':({1:'st',2:'nd',3:'rd'}[n%10]||'th');return n+s}
+function salaryTxt(){return ' · on salary day'+(S.rhythms.salaryDay?' ('+ord(S.rhythms.salaryDay)+')':' · when is it? tap')}
+// ---------- meaning beside a line ----------
+const TL={transfer:'Transfer',signal:'Noted',event:'Event',money:'Money',math:'Math',task:'To do',payment:'Received',note:'Note',ask:'Answer',secret:'Secret',link:'Link',live:'Live answer',message:'Reminder',hold:'Held',credit:'Owed to you',debt:'You owe',invoice:'Invoice',bill:'Bill',income:'Income'};
+function meaning(l,now){
+  const f=l.f;switch(l.type){
+    case 'event':return (f.dt?fDT(f.dt):'Pick a date')+(f.amount?' · '+rs(f.amount):'');
+    case 'money':return rs(f.amount)+(f.cat?' · '+f.cat:'')+(f.items?' · '+f.items.length+' items':'');
+    case 'income':return '+ '+rs(f.amount)+' in';
+    case 'math':return '= '+fN(f.math.value)+(f.math.fromPrev&&/[\/÷]/.test(f.math.op)?' each':'')+(f.budget?' · budget':'');
+    case 'task':return l.done?'Done':((f.assignee?f.assignee+' · ':'')+(f.trigger?salaryTxt().slice(3):(f.dt?'due '+fDT(f.dt):'whenever')));
+    case 'payment':return f.person+' paid you '+rs(f.amount);
+    case 'secret':return 'Locked · tap to reveal · this device only';
+    case 'link':return 'Link'+(f.label?' · '+f.label:'');
+    case 'live':return f.answer;
+    case 'message':return f.dt?fT(f.dt.date)+' · say it to '+f.person:'Say it to '+f.person+' · when?';
+    case 'hold':return 'Held for '+f.person+' · waiting in their chat';
+    case 'credit':return f.person+' owes you '+rs(f.amount)+' · now '+rs(Math.max(0,personBal(f.person,now)));
+    case 'invoice':return f.person+' owes you '+rs(f.amount)+(f.dt?' · due '+fD(f.dt.date):'');
+    case 'debt':return 'You owe '+f.person+' '+rs(f.amount);
+    case 'bill':return rs(f.amount)+' · due '+fD(f.dt.date)+(l.done?' · paid':'');
+    case 'transfer':return (l.done?'Done · ':'')+rs(f.amount)+' · '+f.from+' → '+f.to+(f.trigger?salaryTxt():'');
+    case 'signal':return 'Salary noted'+(S.rhythms.salaryDay?' · usually the '+ord(S.rhythms.salaryDay):'');
+    case 'ask':return l.answer;
+    default:return '';
+  }
+}
+
+// ---------- Returns ----------
+function voices(now){
+  const V=[];const push=(ts,key,text,acts,ref)=>{if(ts<=now)V.push({ts,key,text,acts:acts||[],ref})};
+  S.lines.forEach(l=>{if(l.ts>now)return;const f=l.f,id=l.id;
+    if(l.type==='event'&&f.dt){const d=f.dt.date;const eve=at(addD(sod(d),-1),9);
+      if(eve>l.ts)push(eve,'eb'+id,`Tomorrow. ${clean(l)}.`+(f.film?' Tickets?':''),f.film?['Remind me tonight']:[],id);
+      if(f.dt.hasTime){const h=addM(d,-60);if(h>l.ts)push(h,'eh'+id,`In an hour. ${clean(l)}.`,[],id)}}
+    if(l.type==='task'&&f.dt&&!l.done){const t=f.dt.hasTime?addM(f.dt.date,-30):at(f.dt.date,9);if(t>l.ts)push(t,'td'+id,`Today. ${l.text}.`,['Done'],id);
+      const late=at(addD(sod(f.dt.date),1),9);if(late>l.ts)push(late,'tl'+id,`Still open: ${l.text}.`,['Done','Tomorrow'],id)}
+    if(l.type==='task'&&!f.dt&&!l.done&&!f.trigger){const t=at(addD(sod(l.ts),3),10);push(t,'tw'+id,`Still on your list: ${l.text}.`,['Done'],id)}
+    if(l.type==='message'&&f.dt)push(f.dt.date,'ms'+id,`${fT(f.dt.date)}. `+(/^(hi|hello|salam|salaam)\b/i.test(l.text)?`Say hi to ${f.person}.`:`${clean(l)}.`),['Open '+f.person+"'s chat",'Done'],id);
+    if(l.type==='bill'&&!l.done){const t2=at(addD(sod(f.dt.date),-2),9);if(t2>l.ts)push(t2,'b2'+id,`In 2 days. ${clean(l)}, ${rs(f.amount)}.`,['Paid'],id);push(at(f.dt.date,9),'bd'+id,`Due today. ${clean(l)}, ${rs(f.amount)}.`,['Paid'],id)}
+    if(l.type==='invoice'&&f.dt){const t=at(f.dt.date,9);if(personBal(f.person,t)>0)push(t,'iv'+id,`${f.person}'s invoice is due today. ${rs(personBal(f.person,t))} still owed.`,['Copy a polite reminder'],id)}
+    if(l.type==='credit'){const t=at(addD(sod(l.ts),7),10);if(personBal(f.person,t)>0)push(t,'cr'+id,`${f.person} still owes you ${rs(personBal(f.person,t))}.`,['Copy a polite reminder'],id)}
+    if(f.trigger==='salary'&&!l.done){const t=nextSalary(l.ts);if(t)push(t,'sal'+id,`Salary day. ${l.type==='transfer'?'Move '+rs(f.amount)+' '+f.from+' → '+f.to:l.text}.`,['Done'],id)}
+  });
+  Object.keys(S.threads).forEach(id=>{const s=tSum(id),n=S.threads[id].name;
+    if(s.split){const t=at(addD(sod(s.split.at),1),10);const left=s.owed-S.lines.filter(l=>l.thread===id&&l.type==='payment'&&l.ts<=t).reduce((a,l)=>a+l.f.amount,0);if(left>0)push(t,'sp'+id,`${n}: ${rs(left)} still to come in from friends.`,['Copy a reminder for the group'])}
+    if(s.budget){const sp=s.spent;if(sp>=s.budget*.8){const last=s.L.filter(l=>['money','event','bill'].includes(l.type)).pop();if(last)push(addM(last.ts,1),'bg'+id,`${n}: ${rs(sp)} of ${rs(s.budget)} used.`)}}
+  });
+  if(S.lines.length){const first=sod(S.lines.reduce((a,l)=>l.ts<a?l.ts:a,S.lines[0].ts));for(let d=first;d<=now;d=addD(d,1)){if(d.getDay()===0){const t=at(d,20);const L=spendIn(weekStart(d),t);if(L.length){const by={};L.forEach(l=>{const c=l.f.cat||catOf(l.text.toLowerCase())||'other';by[c]=(by[c]||0)+l.f.amount});const top=Object.entries(by).sort((a,b)=>b[1]-a[1])[0];push(t,'wk'+d.getTime(),`This week: ${rs(L.reduce((a,l)=>a+l.f.amount,0))}. Most on ${top[0]}.`)}}}}
+  return V.filter(v=>now-v.ts<21*864e5);
+}
+function nextSalary(after){let best=null;S.lines.forEach(l=>{if(l.type==='signal'&&l.ts>after&&(!best||l.ts<best))best=l.ts});if(S.rhythms.salaryDay){let d=new Date(after.getFullYear(),after.getMonth(),S.rhythms.salaryDay,9);if(d<=after)d=new Date(after.getFullYear(),after.getMonth()+1,S.rhythms.salaryDay,9);if(!best||d<best)best=d}return best}
+function upcoming(now){
+  const out=[];const end=addD(sod(now),8);
+  S.lines.forEach(l=>{if(l.ts>now)return;const f=l.f;
+    if((l.type==='event'||l.type==='message')&&f.dt&&f.dt.date>=now&&f.dt.date<end)out.push({d:f.dt.date,s:`${fDT(f.dt)}: ${clean(l)}`});
+    if(l.type==='task'&&!l.done)out.push({d:f.dt?f.dt.date:addD(now,9),s:(f.dt?(f.dt.date<sod(now)?'Overdue':fD(f.dt.date))+': ':'Anytime: ')+l.text});
+    if(l.type==='bill'&&!l.done&&f.dt.date<end)out.push({d:f.dt.date,s:`${fD(f.dt.date)}: ${clean(l)} ${rs(f.amount)}`});
+    if(l.type==='hold')out.push({d:addD(now,10),s:`For ${f.person}: ${f.body||l.text}`});
+  });
+  return out.sort((a,b)=>a.d-b.d);
+}
+
+// ---------- overlays ----------
+function openOv(title,html){document.getElementById('ovt').textContent=title;document.getElementById('ovb').innerHTML=html;document.getElementById('ov').style.display='flex'}
+const closeOv=()=>document.getElementById('ov').style.display='none';
+function ovComing(){const now=NOW();const u=upcoming(now);openOv('Coming up',u.length?u.map(x=>`<div class="row"><span>${esc(x.s)}</span></div>`).join(''):'<div class="muted">Nothing ahead.</div>')}
+function ovMoney(){
+  const now=NOW();const wk=spendIn(weekStart(now),now),mo=spendIn(new Date(now.getFullYear(),now.getMonth(),1),now);const sum=a=>a.reduce((x,l)=>x+l.f.amount,0);
+  const by={};mo.forEach(l=>{const c=l.f.cat||catOf(l.text.toLowerCase())||'other';by[c]=(by[c]||0)+l.f.amount});
+  let h=`<div class="card"><div class="muted">This week</div><div class="big">${rs(sum(wk))}</div><div class="muted">This month ${rs(sum(mo))}</div></div>`;
+  if(Object.keys(by).length)h+='<div class="sec">This month by kind</div>'+Object.entries(by).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="row"><span>${cap(k)}</span><span>${rs(v)}</span></div>`).join('');
+  const owed=[];Object.keys(S.threads).forEach(id=>{const s=tSum(id);if(s.left>0)owed.push([S.threads[id].name+` (${s.pleft} people)`,s.left])});allPeople().forEach(p=>{const b=personBal(p,now);if(b>0)owed.push([p,b])});
+  if(owed.length)h+='<div class="sec">Owed to you</div>'+owed.map(o=>`<div class="row"><span>${esc(o[0])}</span><span>${rs(o[1])}</span></div>`).join('');
+  const you=allPeople().map(p=>[p,personBal(p,now)]).filter(x=>x[1]<0);if(you.length)h+='<div class="sec">You owe</div>'+you.map(o=>`<div class="row"><span>${esc(o[0])}</span><span>${rs(-o[1])}</span></div>`).join('');
+  const bills=S.lines.filter(l=>l.type==='bill'&&!l.done&&l.ts<=now);if(bills.length)h+='<div class="sec">Bills ahead</div>'+bills.map(l=>`<div class="row"><span>${esc(clean(l))} · ${fD(l.f.dt.date)}</span><span>${rs(l.f.amount)}</span></div>`).join('');
+  openOv('Money',h);
+}
+function ovThreads(){const ids=Object.keys(S.threads).filter(id=>tLines(id).length);openOv('Threads',ids.length?ids.sort((a,b)=>S.threads[b].created-S.threads[a].created).map(id=>`<div class="card" data-th="${id}" style="cursor:pointer"><b>${esc(S.threads[id].name)}</b><div class="muted">${tLines(id).length} lines${tSum(id).spent?' · '+rs(tSum(id).spent):''}</div></div>`).join(''):'<div class="muted">Threads form by themselves when lines belong together.</div>')}
+function ovThread(id){
+  const s=tSum(id),t=S.threads[id],now=NOW();const p=[];
+  if(s.ev&&s.ev.f.dt)p.push(['When',fDT(s.ev.f.dt)]);if(s.budget)p.push(['Budget',rs(s.budget)]);if(s.spent)p.push(['Spent',rs(s.spent)+(s.budget?` (${Math.round(s.spent/s.budget*100)}%)`:'')]);
+  if(s.split)p.push(['Split',`${s.split.n} ways, ${rs(s.split.share)} each`]);if(s.owed)p.push(['Still to come in',s.left>0?`${rs(s.left)} from ${s.pleft} people`:'Everyone paid']);
+  s.tasks.forEach(x=>p.push([x.done?'Done':'To do',x.text]));
+  openOv(t.name,`<div class="card">${p.map(x=>`<div class="row"><span class="muted">${x[0]}</span><span>${esc(x[1])}</span></div>`).join('')}</div><div class="sec">Lines</div>${s.L.map(l=>lineHTML(l,now)).join('')}`);
+}
+function ovPeople(){const ps=allPeople();openOv('People',ps.length?ps.map(p=>{const b=personBal(p,NOW());return `<div class="card" data-p="${esc(p)}" style="cursor:pointer"><b>${esc(p)}</b><div class="muted">${S.lines.filter(l=>(l.f.people||[]).includes(p)).length} lines${b>0?' · owes you '+rs(b):b<0?' · you owe '+rs(-b):''}</div></div>`}).join(''):'<div class="muted">People appear when you mention them.</div>')}
+function ovPerson(p){
+  const now=NOW();const L=S.lines.filter(l=>(l.f.people||[]).includes(p)&&l.ts<=now);const b=personBal(p,now);const held=L.filter(l=>l.type==='hold');
+  openOv(p,`<div class="card">${b?`<div class="row"><span class="muted">${b>0?'Owes you':'You owe'}</span><span>${rs(Math.abs(b))}</span></div>`:''}<div class="row"><span class="muted">Mentioned in</span><span>${L.length} lines</span></div>${held.length?`<div class="row"><span class="muted">Waiting for them</span><span>${held.length}</span></div>`:''}</div><div class="sec">Everything about ${esc(p)}</div>${L.map(l=>lineHTML(l,now)).join('')}`);
+}
+
+// ---------- sheet ----------
+function openSheet(id){
+  const l=S.lines.find(x=>x.id===id);const bg=document.getElementById('sheetbg');
+  if(l.type==='secret'&&!l.revealed){if(confirmReveal(l))return}
+  const types=['event','money','math','task','transfer','note','link','secret','bill','credit','income'];
+  document.getElementById('sheet').innerHTML=`<b>This line</b><textarea id="ed" rows="2" style="margin-top:8px">${esc(l.text)}</textarea>
+   <div class="muted" style="margin-top:6px">It is:</div><div class="tps">${types.map(t=>`<span class="tp ${l.type===t?'on':''}" data-t="${t}">${TL[t]}</span>`).join('')}</div>
+   <div class="muted">Belongs with:</div><select id="th" style="width:100%;margin:4px 0 10px"><option value="">Nothing</option><option value="new">Start a new thread</option>${Object.values(S.threads).map(t=>`<option value="${t.id}" ${l.thread===t.id?'selected':''}>${esc(t.name)}</option>`).join('')}</select>
+   ${l.type==='live'?`<button class="btn" id="pin">${S.pinned[l.id]?'Unpin':'Pin, keep it'}</button>`:''}
+   <button class="btn dark" id="sv">Save</button><button class="btn" id="dl">Delete</button><button class="btn" id="cx">Cancel</button>`;
+  bg.style.display='flex';let forced=null;
+  document.querySelectorAll('#sheet .tp').forEach(x=>x.onclick=()=>{forced=x.dataset.t;document.querySelectorAll('#sheet .tp').forEach(y=>y.classList.toggle('on',y===x))});
+  document.getElementById('cx').onclick=()=>bg.style.display='none';
+  const pin=document.getElementById('pin');if(pin)pin.onclick=()=>{S.pinned[l.id]=!S.pinned[l.id];save();bg.style.display='none';render()};
+  document.getElementById('dl').onclick=()=>{S.lines=S.lines.filter(x=>x!==l);tidy();save();bg.style.display='none';render()};
+  document.getElementById('sv').onclick=()=>{l.text=document.getElementById('ed').value.trim()||l.text;const f=parse(l.text,l.ts,prevVal(new Date(l.ts-1)));l.f=f;l.type=f.type;l.forced=null;
+    if(forced&&forced!==f.type){l.type=forced;const am=l.text.match(/(\d[\d,]*)(k)?/);if(['money','bill','credit','income'].includes(forced)&&am&&l.f.amount==null)l.f.amount=num(am[1],am[2]);l.forced=forced;if(forced==='bill'&&!l.f.dt)l.f.dt={date:addD(sod(l.ts),7),hasTime:false,tk:[]};if(forced==='credit'&&!l.f.person){l.f.person=cap(l.text.split(' ')[0].toLowerCase());l.f.people=[l.f.person]}if(forced==='secret'&&!l.f.secret)l.f.secret=l.text.split(/\s+/).slice(-1);if(forced==='math'&&!l.f.math)l.f.math={value:evalExpr((l.text.match(/[\d.,+\-*x×\/÷\s]+/)||['0'])[0])||0,op:''}}
+    if(l.type==='ask')l.answer=answer(l.text,l.ts);
+    const th=document.getElementById('th').value;l.thread=th==='new'?newThread(l):(th||null);tidy();save();bg.style.display='none';render()};
+}
+function confirmReveal(l){const bg=document.getElementById('sheetbg');document.getElementById('sheet').innerHTML=`<b>Reveal secret?</b><p class="muted">In the real app, your face unlocks this. Secrets stay on this phone and are never exported.</p><button class="btn dark" id="ok">Reveal</button><button class="btn" id="cx">Cancel</button>`;bg.style.display='flex';document.getElementById('cx').onclick=()=>bg.style.display='none';document.getElementById('ok').onclick=()=>{l.revealed=true;bg.style.display='none';render();setTimeout(()=>{l.revealed=false;render()},8000)};return true}
+function askSalary(){const bg=document.getElementById('sheetbg');document.getElementById('sheet').innerHTML=`<b>When does salary usually come?</b><p class="muted">Asked once. Memento uses it for lines like "on next salary".</p><div style="display:flex;gap:8px;align-items:center">Day of month <input id="sd" type="number" min="1" max="31" value="${S.rhythms.salaryDay||1}" style="width:70px;font:inherit;padding:6px;border:1px solid #ddd;border-radius:8px"></div><button class="btn dark" id="ok" style="margin-top:10px">Save</button><button class="btn" id="cx">Not now</button>`;bg.style.display='flex';document.getElementById('cx').onclick=()=>bg.style.display='none';document.getElementById('ok').onclick=()=>{const v=+document.getElementById('sd').value;if(v>=1&&v<=31){S.rhythms.salaryDay=v;save();}bg.style.display='none';render()}}
+function tidy(){Object.keys(S.threads).forEach(id=>{if(!tLines(id).length)delete S.threads[id]})}
+function toast(t){const e=document.getElementById('toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(()=>e.style.display='none',2600)}
+
+// ---------- state + saving (this device only) ----------
+const KEY='memento-alpha',KEY_SEC='memento-alpha-secrets';
+let S={lines:[],threads:{},acted:{},pinned:{},rhythms:{}};let uid=1;
+const NOW=()=>new Date();
+function pack(){
+  const lines=S.lines.filter(l=>l.type!=='secret').map(l=>({id:l.id,text:l.text,ts:+l.ts,forced:l.forced||null,done:!!l.done,thread:l.thread||null,splitPay:!!l.splitPay,answer:l.answer||null,rel:l.rel||null}));
+  const threads={};Object.values(S.threads).forEach(t=>threads[t.id]={id:t.id,name:t.name,created:+t.created});
+  return {v:1,app:VERSION,lines,threads,acted:S.acted,pinned:S.pinned,rhythms:S.rhythms,saved:Date.now()};
+}
+function packSecrets(){return S.lines.filter(l=>l.type==='secret').map(l=>({id:l.id,text:l.text,ts:+l.ts,done:!!l.done}))}
+function unpack(d,secrets){
+  S={lines:[],threads:{},acted:d.acted||{},pinned:d.pinned||{},rhythms:d.rhythms||{}};
+  Object.values(d.threads||{}).forEach(t=>S.threads[t.id]={id:t.id,name:t.name,created:new Date(t.created)});
+  const raw=(d.lines||[]).concat((secrets||[]).map(x=>({...x,forced:null,thread:null}))).sort((a,b)=>a.ts-b.ts);
+  raw.forEach(r=>{const ts=new Date(r.ts);const f=parse(r.text,ts,prevVal(ts));S.lines.push({id:r.id,text:r.text,ts,f,type:r.forced||f.type,forced:r.forced,done:r.done,thread:r.thread,splitPay:r.splitPay,answer:r.answer,rel:r.rel})});
+  uid=Math.max(1,...S.lines.map(l=>l.id+1),...Object.keys(S.threads).map(k=>+k.slice(1)+1));
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(pack()));localStorage.setItem(KEY_SEC,JSON.stringify(packSecrets()))}catch(e){toast('Could not save on this device')}}
+function load(){try{const d=JSON.parse(localStorage.getItem(KEY)||'null');const sec=JSON.parse(localStorage.getItem(KEY_SEC)||'[]');if(d){unpack(d,sec);return true}}catch(e){}return false}
+function persist(){try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}}
+
+// ---------- add ----------
+function prevVal(ts){const p=S.lines.filter(x=>x.ts<=ts).sort((a,b)=>b.ts-a.ts)[0];return p?val(p):null}
+function build(text,ts){const f=parse(text,ts,prevVal(ts));return {id:uid++,text,ts,f,type:f.type,done:false,thread:null}}
+function add(text){text=text.trim();if(!text)return;const ts=NOW();const l=build(text,ts);l.thread=assignThread(l);
+  if(!l.thread&&!['ask','secret','signal'].includes(l.type)){const r=related(text,l.id);if(r&&(ts-r.ts)>10*60e3)l.rel=r.id}
+  if(l.type==='signal'&&!S.rhythms.salaryDay)S.rhythms.salaryDay=ts.getDate();
+  S.lines.push(l);if(l.type==='ask')l.answer=answer(text,ts);save();render();
+  if(l.f.trigger==='salary'&&!S.rhythms.salaryDay)setTimeout(askSalary,350);
+}
+
+// ---------- render ----------
+function render(){
+  const now=NOW();
+  const V=voices(now).filter(v=>!(v.ref&&S.lines.find(x=>x.id===v.ref&&x.done)&&!S.acted[v.key+'Done']&&!S.acted[v.key+'Paid']));
+  const items=S.lines.map(l=>({ts:l.ts,l})).concat(V.map(v=>({ts:v.ts,v}))).sort((a,b)=>a.ts-b.ts);
+  const st=document.getElementById('stream');
+  if(!items.length){st.innerHTML=`<div class="empty">A quiet page.<br>Write anything, the way you text yourself.<br><span style="font-size:13px">Memento works out the rest.</span><br><br>${['dinner with Sara sat 8pm','groceries 1850','rent 95000 / 3','call mom tonight','send 40000 from meezan to ubl on next salary','for Ali: plumber 0300 1234567'].map(x=>`<span class="ex">${esc(x)}</span>`).join('')}</div>`;return}
+  let h='',cur=null;const recent=addM(now,-36*60);
+  items.forEach(it=>{const d=sod(it.ts).getTime();if(d!==cur){cur=d;h+=`<div class="day">${d===sod(now).getTime()?'Today':d===addD(sod(now),-1).getTime()?'Yesterday':fD(it.ts)}</div>`}
+    h+=it.l?lineHTML(it.l,now):voiceHTML(it.v,it.v.ts<recent)});
+  st.innerHTML=h;st.scrollTop=st.scrollHeight;
+}
+function lineHTML(l,now){
+  const f=l.f;let tx=esc(l.text);
+  if(l.type==='secret'&&!l.revealed&&f.secret)f.secret.forEach(s=>tx=tx.replace(esc(s),'<span class="mask">••••••</span>'));
+  if(l.type==='link'&&f.url){const u=/^https?:/.test(f.url)?f.url:'https://'+f.url;tx=tx.replace(esc(f.url),`<a href="${esc(u)}" target="_blank" rel="noopener">${esc(f.url)}</a>`)}
+  const fade=l.type==='live'&&l.ts<sod(now)&&!S.pinned[l.id];
+  const mn=meaning(l,now);const t=l.thread&&S.threads[l.thread];
+  const r=l.rel&&S.lines.find(x=>x.id===l.rel);
+  const ppl=(f.people||[]).map(p=>`<span class="pill" data-p="${esc(p)}">${esc(p)}</span>`).join('');
+  return `<div class="me ${l.done?'done':''} ${fade?'faded':''}" data-id="${l.id}"><div class="tx">${tx}</div>${(mn||t||ppl||r)?`<div class="mn">${mn?`<span class="v ${['math','ask','live','transfer'].includes(l.type)?'strong':''}">${esc(fade?'faded · tap to keep':mn)}</span>`:''}${t?`<span class="pill" data-th="${t.id}">${esc(t.name)}</span>`:''}${ppl}${r?`<span class="rel">↳ ${esc(r.text.length>48?r.text.slice(0,46)+'…':r.text)} · ${fD(r.ts)}</span>`:''}</div>`:''}</div>`;
+}
+function voiceHTML(v,old){
+  return `<div class="ink ${old?'old':''}"><span class="dot"></span><div><div>${esc(v.text)}</div>${v.acts.length?`<div class="acts">${v.acts.map(a=>`<span class="ab ${S.acted[v.key+a]?'on':''}" data-k="${v.key}" data-a="${esc(a)}" data-ref="${v.ref||''}">${esc(a)}</span>`).join('')}</div>`:''}</div></div>`;
+}
+
+// ---------- menu + export ----------
+function openMenu(){openOv('Memento',`
+  <button class="mi" data-o="coming">Coming up</button>
+  <button class="mi" data-o="money">Money</button>
+  <button class="mi" data-o="threads">Threads</button>
+  <button class="mi" data-o="people">People</button>
+  <button class="mi" data-o="salary">Salary day${S.rhythms.salaryDay?' · '+ord(S.rhythms.salaryDay):''}</button>
+  <button class="mi" data-o="export">Export everything as text</button>
+  <button class="mi" data-o="help">How to use Memento</button>
+  <p class="muted" style="margin-top:18px">Memento · alpha ${VERSION}. Your page is saved only on this device, in this browser. Nothing is sent anywhere. Export now and then as a backup.</p>`)}
+function exportText(){
+  let out='# Memento export · '+fD(NOW())+' · alpha '+VERSION+'\n';let cur=null;
+  S.lines.slice().sort((a,b)=>a.ts-b.ts).forEach(l=>{const d=fD(l.ts);if(d!==cur){cur=d;out+='\n## '+d+'\n'}
+    const txt=l.type==='secret'?'[secret, not exported]':l.text;const mn=l.type==='secret'?'':meaning(l,NOW());const t=l.thread&&S.threads[l.thread];
+    out+='- '+(l.done?'~~'+txt+'~~':txt)+(mn?'  ·  '+mn:'')+(t?'  ·  #'+t.name.replace(/\s+/g,'-'):'')+'\n'});
+  openOv('Export',`<p class="muted">Plain text, yours forever. Includes meaning and threads.</p><button class="btn dark" id="cp">Copy all</button><textarea id="exp" style="width:100%;height:60vh;margin-top:10px;border:1px solid #eee;border-radius:10px;padding:10px;font:12px ui-monospace,Menlo,monospace">${esc(out)}</textarea>`);
+  document.getElementById('cp').onclick=async()=>{try{await navigator.clipboard.writeText(out);toast('Copied')}catch(e){const ta=document.getElementById('exp');ta.select();toast('Select all and copy')}};
+}
+function help(){openOv('How to use Memento',`
+  <p>Write anything, the way you'd text yourself. Don't organise. Memento works out what each line means and shows it quietly underneath.</p>
+  <div class="sec">Try</div>
+  <div class="row"><span>dentist tue 5pm</span><span class="muted">event</span></div>
+  <div class="row"><span>groceries 1850</span><span class="muted">money</span></div>
+  <div class="row"><span>dinner 4800 then /4</span><span class="muted">split</span></div>
+  <div class="row"><span>call mom tonight</span><span class="muted">to do</span></div>
+  <div class="row"><span>Ali brings cake friday</span><span class="muted">someone else's to do</span></div>
+  <div class="row"><span>Bilal paid 1200</span><span class="muted">received</span></div>
+  <div class="row"><span>Imran 3400 udhaar</span><span class="muted">owed to you</span></div>
+  <div class="row"><span>send 40000 from meezan to ubl on next salary</span><span class="muted">life-event</span></div>
+  <div class="row"><span>salary came</span><span class="muted">signal</span></div>
+  <div class="row"><span>for Ali: plumber 0300…</span><span class="muted">held for Ali</span></div>
+  <div class="row"><span>netflix password abc@x.com pass99</span><span class="muted">secret</span></div>
+  <div class="row"><span>?dentist</span><span class="muted">find</span></div>
+  <div class="row"><span>how much on food this week?</span><span class="muted">ask</span></div>
+  <div class="row"><span>who owes me?</span><span class="muted">ask</span></div>
+  <div class="sec">Good to know</div>
+  <p class="muted">Memento brings things back as dark cards when you open it (this alpha can't send phone notifications). Tap any line to correct it. Related older lines appear with ↳. Urdu days work too: aaj, kal, parson, jumma, itwaar. It's simple rules, so it will miss things. Those misses are the research.</p>
+  <div class="sec">Add to Home Screen</div>
+  <p class="muted">In Safari, tap Share, then Add to Home Screen. Memento then opens full screen like an app. Notes saved in Safari and in the home screen app are kept separately.</p>`)}
+
+// ---------- typing ----------
+const inp=document.getElementById('in');
+inp.addEventListener('input',()=>{const v=inp.value.trim(),lv=document.getElementById('live');if(!v){lv.innerHTML='';return}
+  const l=build(v,NOW());uid--;if(l.type==='ask')l.answer=answer(v,NOW());
+  let j='';if(!['ask','live','secret','note','message','hold','credit','debt','invoice','payment','signal'].includes(l.type)){const kw=keywords(v);const t=Object.values(S.threads).find(t=>{const f=tLines(t.id)[0];return f&&[...keywords(f.text)].some(k=>kw.has(k))});if(t)j=' · with '+t.name}
+  let r='';if(!j&&!['ask','secret'].includes(l.type)){const x=related(v,-1);if(x)r=' · ↳ '+(x.text.length>34?x.text.slice(0,32)+'…':x.text)}
+  const mn=meaning(l,NOW());lv.innerHTML=(mn?'<b>'+esc(mn)+'</b>':`<span>${TL[l.type]}</span>`)+esc(j+r)});
+const submit=()=>{add(inp.value);inp.value='';document.getElementById('live').innerHTML=''};
+inp.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();submit()}});
+document.getElementById('send').onclick=()=>{submit();inp.focus()};
+document.getElementById('menuBtn').onclick=openMenu;
+
+// ---------- clicks ----------
+document.querySelector('.app').addEventListener('click',e=>{
+  const t=e.target;
+  if(t.classList.contains('ex')){inp.value=t.textContent;inp.dispatchEvent(new Event('input'));inp.focus();return}
+  if(t.dataset.o){const o=t.dataset.o;if(o==='salary'){askSalary();return}if(o==='export'){exportText();return}if(o==='help'){help();return}({coming:ovComing,money:ovMoney,threads:ovThreads,people:ovPeople})[o]();return}
+  if(t.id==='back'){closeOv();return}
+  if(t.tagName==='A')return;
+  if(t.dataset.th){e.stopPropagation();ovThread(t.dataset.th);return}
+  const card=t.closest('[data-th]');if(card&&card.classList.contains('card')){ovThread(card.dataset.th);return}
+  if(t.dataset.p){e.stopPropagation();ovPerson(t.dataset.p);return}
+  const pc=t.closest('[data-p]');if(pc&&pc.classList.contains('card')){ovPerson(pc.dataset.p);return}
+  if(t.dataset.k){const a=t.dataset.a,ref=+t.dataset.ref;const l=S.lines.find(x=>x.id===ref);S.acted[t.dataset.k+a]=true;
+    if((a==='Done'||a==='Paid')&&l)l.done=true;
+    else if(a==='Tomorrow'&&l&&l.f.dt){l.f.dt={...l.f.dt,date:addD(l.f.dt.date,1)}}
+    else if(a.startsWith('Open '))toast('Open WhatsApp to message '+a.slice(5).replace("'s chat",''));
+    else if(a.startsWith('Copy')){try{navigator.clipboard.writeText('Hi! Just a gentle reminder about the pending amount. Thanks!')}catch(err){}toast('Copied a polite message')}
+    else if(a==='Remind me tonight')toast('Noted');
+    save();render();return}
+  if(t.closest('#ov'))return;
+  const ln=t.closest('.me');if(ln){const l=S.lines.find(x=>x.id==ln.dataset.id);if(!l)return;
+    if(l.type==='live'&&l.ts<sod(NOW())&&!S.pinned[l.id]){S.pinned[l.id]=true;save();render();return}
+    if(l.f.trigger==='salary'&&!S.rhythms.salaryDay){askSalary();return}
+    openSheet(+ln.dataset.id)}
+});
+document.getElementById('sheetbg').onclick=e=>{if(e.target.id==='sheetbg')e.target.style.display='none'};
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)render()});
+setInterval(()=>{const st=document.getElementById('stream');if(st.scrollTop+st.clientHeight>=st.scrollHeight-60&&document.getElementById('sheetbg').style.display!=='flex')render()},60000);
+
+// ---------- start ----------
+document.getElementById('ver').textContent='· alpha '+VERSION.replace(/\.0$/,'');
+load();persist();render();inp.focus();
+</script>
+</body>
+</html>
