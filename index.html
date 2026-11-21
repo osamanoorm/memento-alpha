@@ -84,7 +84,7 @@ select{font:inherit;font-size:14px;padding:6px;border-radius:8px;border:1px soli
   <div class="toast" id="toast"></div>
 </div>
 <script>
-const VERSION='0.1.1';
+const VERSION='0.1.2';
 // ---------- basics ----------
 const WDA={sun:0,sunday:0,mon:1,monday:1,tue:2,tues:2,tuesday:2,wed:3,wednesday:3,thu:4,thur:4,thurs:4,thursday:4,fri:5,friday:5,sat:6,saturday:6,jumma:5,juma:5,jumeraat:4,itwaar:0,itwar:0,mangal:2,budh:3};
 const MON={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,sept:8,oct:9,nov:10,dec:11};
@@ -138,6 +138,7 @@ function evalExpr(str){
 }
 function namesIn(text){
   const out=new Set();const t=text.replace(/'s\b/g,''),w=t.split(/\s+/);
+  const ws=w.filter(x=>/[a-z]/i.test(x));if(ws.length>=2&&ws.every(x=>/^[A-Z0-9]/.test(x))&&!/\d/.test(t))return [];
   w.forEach((x,i)=>{const c=x.replace(/[^A-Za-z]/g,'');if(c.length<3)return;const lc=c.toLowerCase();
     if(/^[A-Z][a-z]+$/.test(c)&&!(lc in WDA)&&MON[lc.slice(0,3)]===undefined&&!CATS.food.test(lc)&&(i>0||/^(paid|sent|gave|brings|will|to|should|needs|returned|owes)$/i.test(w[1]||'')||/udhaa?r/i.test(t)))out.add(c)});
   let m=t.match(/\bwith ([a-z]+)\b/i);if(m)out.add(cap(m[1].toLowerCase()));
@@ -159,11 +160,15 @@ function parse(text,base,prevVal){
   if(/\b(salary|tankhwah|tankhwa)\s+(came|received|credited|aya|aagayi|aa gayi|arrived)\b|\bgot paid\b/.test(lower)){f.type='signal';return f}
   if((m=lower.match(/\b(?:send|transfer|move)\s+(?:rs\.?\s?)?(\d[\d,]*(?:\.\d+)?)(k)?\s+from\s+([a-z]+)\s+to\s+([a-z]+)/))){f.type='transfer';f.amount=num(m[1],m[2]);f.from=m[3].toUpperCase().length<=4?m[3].toUpperCase():cap(m[3]);f.to=m[4].toUpperCase().length<=4?m[4].toUpperCase():cap(m[4]);return f}
   if(/^(how much|how many|who owes|what do i owe|what's coming|whats coming|what is coming|total)\b/.test(lower)||/^\?/.test(lower)){f.type='ask';return f}
-  if((m=text.match(/\b(password|passcode|pwd|pin|otp|login)\b/i))||(/\S+@\S+\.\S+\s+\S{4,}/.test(text)&&!/\b(meet|call|send)\b/i.test(lower))){
-    const em=text.match(/\S+@\S+\.\S+/);const toks=text.split(/\s+/).filter(x=>x.length>=4&&!/^(password|passcode|pass|pwd|pin|otp|login)$/i.test(x)&&x!==(em&&em[0])&&(/\d/.test(x)||/[^a-z]/i.test(x)||x.length>=6)&&!/^[a-z]+$/i.test(x));
+  if((m=text.match(/\bsecurity\s+(?:pic|picture|image|question|answer|word)s?\b\s*(?:is|:|-)?\s*(.+)$/i))&&m[1].trim()){f.type='secret';f.people=[];f.secret=[m[1].trim()];f.label=text.replace(m[1],'').trim();return f}
+  if((m=text.match(/\b(password|passcode|pwd|pin|otp|login|cvv)\b/i))||(/\S+@\S+\.\S+\s+\S{4,}/.test(text)&&!/\b(meet|call|send)\b/i.test(lower))){
+    const em=text.match(/\S+@\S+\.\S+/);const toks=text.split(/\s+/).filter(x=>x.length>=4&&!/^(password|passcode|pass|pwd|pin|otp|login|cvv)$/i.test(x)&&x!==(em&&em[0])&&(/\d/.test(x)||/[^a-z]/i.test(x)||x.length>=6)&&!/^[a-z]+$/i.test(x));
     if(toks.length){f.type='secret';f.people=[];f.secret=toks;f.label=text.replace(/\S+@\S+\.\S+/,'').split(/\s+/).filter(x=>!toks.includes(x)).join(' ').trim();f.email=em&&em[0];return f}
   }
   if((m=text.match(/(https?:\/\/\S+|www\.\S+|\b[\w-]+\.(?:com|org|net|io|pk|co|app|dev|example|edu)(?:\/\S*)?)/i))){f.type='link';f.url=m[1];f.label=text.replace(m[1],'').trim();return f}
+  if((m=text.match(/^(watched|finished watching|finished reading|done reading|finished|saw|started watching|started reading|started|watching|reading now|now watching)\s+(.+)$/i))&&!/\d{3,}/.test(m[2])){f.type='status';f.state=/^(started|watching|reading now|now watching)/i.test(m[1])?'on':'done';f.verb=m[1].toLowerCase();f.title=m[2].trim();f.people=[];return f}
+  if((m=lower.match(/(\d[\d,]*)\s?(?:km|kms|kilometers?|kilometres?)\b/))){f.type='reading';f.km=num(m[1]);f.oil=/\boil\b/.test(lower);f.people=[];return f}
+  {const rm=text.match(/\b(PK\d{2}[A-Z]{4}[\d ]{10,30}|\d[\d \-]{8,}\d)\b/i);if(rm&&!/,/.test(rm[1])&&rm[1].replace(/\D/g,'').length>=10){f.type='ref';f.copy=rm[1].replace(/[\s-]/g,'');f.people=[];return f}}
   if((m=lower.match(/(\d+(?:\.\d+)?)\s*([a-z]{3})\s+(?:to|in)\s+([a-z]{3})\b/))&&RATES[m[2]]&&RATES[m[3]]){
     const v=num(m[1])*RATES[m[2]]/RATES[m[3]],ly=num(m[1])*RATES_LY[m[2]]/RATES_LY[m[3]];
     f.type='live';f.answer=`${m[1]} ${m[2].toUpperCase()} ≈ ${v.toFixed(2)} ${m[3].toUpperCase()} (rough offline rate)`+(/last year|vs/.test(lower)?` · ${ly.toFixed(2)} a year ago (${(v>=ly?'+':'')+((v/ly-1)*100).toFixed(1)}%)`:'');return f}
@@ -172,10 +177,14 @@ function parse(text,base,prevVal){
   if((m=text.match(/^(?:for|send to|forward to|share with)\s+([A-Za-z]+)\s*[:,\-]?\s*(.*)$/i))){f.type='hold';f.person=cap(m[1].toLowerCase());f.body=m[2];if(!f.people.includes(f.person))f.people.push(f.person);return f}
   if((m=text.match(/^([A-Za-z][a-z]+)\s+(paid|sent|gave|returned|transferred)\s+(?:me\s+|back\s+)*(?:rs\.?\s?)?(\d[\d,]*(?:\.\d+)?)(k)?/i))&&!/^(i|we)$/i.test(m[1])){f.type='payment';f.person=cap(m[1].toLowerCase());f.amount=num(m[3],m[4]);return f}
   if((m=lower.match(/^(?:i owe|owe)\s+([a-z]+)\s+(?:rs\.?\s?)?(\d[\d,]*)(k)?/))||(m=lower.match(/^borrowed\s+(?:rs\.?\s?)?(\d[\d,]*)(k)?\s+from\s+([a-z]+)/))){
-    const p=isNaN(num(m[1]))?m[1]:m[3];const a=isNaN(num(m[1]))?num(m[2],m[3]):num(m[1],m[2]);f.type='debt';f.person=cap(p);f.amount=a;f.people.push(f.person);return f}
-  const am=st.match(/(?:rs\.?\s?|pkr\s?|\$\s?)?(\d[\d,]*(?:\.\d+)?)(k)?\b(?!\s?(?:people|persons|pax|bags?|kg|pcs|pieces))/i);
+    const p=isNaN(num(m[1]))?m[1]:m[3];const a=isNaN(num(m[1]))?num(m[2],m[3]):num(m[1],m[2]);f.type='debt';f.when=when;f.person=cap(p);f.amount=a;f.people.push(f.person);return f}
+  const br=text.match(/\(([^)]*)\)\s*$/);const when=br?br[1].trim():null;
+  if((m=text.match(/^(?:rs\.?\s?)?(\d[\d,]*(?:\.\d+)?)(k)?\s+([A-Z][a-z]+(?:\s[A-Z][a-z]+)?)\s*(?:\([^)]*\))?\s*$/))&&!(m[3].toLowerCase() in WDA)){f.type='credit';f.amount=num(m[1],m[2]);f.person=m[3];f.people=[m[3]];f.when=when;return f}
+  if((m=text.match(/^(?:gave|lent)\s+([A-Za-z]+)\s+(?:rs\.?\s?)?(\d[\d,]*(?:\.\d+)?)(k)?/i))){f.type='credit';f.amount=num(m[2],m[3]);f.person=cap(m[1].toLowerCase());f.people=[f.person];f.when=when;return f}
+  if((m=text.match(/^(?:took|borrowed)\s+(?:rs\.?\s?)?(\d[\d,]*(?:\.\d+)?)(k)?\s+from\s+([A-Za-z]+)/i))){f.type='debt';f.amount=num(m[1],m[2]);f.person=cap(m[3].toLowerCase());f.people=[f.person];f.when=when;return f}
+  const am=st.match(/(?<![a-z])(?:rs\.?\s?|pkr\s?|\$\s?)?(\d[\d,]*(?:\.\d+)?)(k)?\b(?!\s?(?:people|persons|pax|bags?|kg|pcs|pieces))/i);
   const amount=am?num(am[1],am[2]):null;
-  if(/\b(udhaa?r|owes me|lent|loan to|on credit|baqi)\b/.test(lower)&&amount!=null){const all=st.match(/\d[\d,]*(?:\.\d+)?k?/g)||[];f.type='credit';f.amount=num(all[all.length-1].replace(/k/i,''),/k/i.test(all[all.length-1]));f.person=f.people[0]||cap(lower.split(' ')[0]);if(!f.people.includes(f.person))f.people.unshift(f.person);return f}
+  if(/\b(udhaa?r|owes me|lent|loan to|on credit|baqi)\b/.test(lower)&&amount!=null){const all=st.match(/\d[\d,]*(?:\.\d+)?k?/g)||[];f.type='credit';f.when=when;f.amount=num(all[all.length-1].replace(/k/i,''),/k/i.test(all[all.length-1]));f.person=f.people[0]||cap(lower.split(' ')[0]);if(!f.people.includes(f.person))f.people.unshift(f.person);return f}
   if(/\binvoice\b/.test(lower)&&amount!=null){f.type='invoice';f.amount=amount;const pre=text.split(/\binvoice\b/i)[0].trim();f.person=pre?pre.split(/\s+/).map(w=>cap(w.toLowerCase())).join(' '):(f.people[0]||'Client');f.people=[f.person];return f}
   if(/\b(due|bill|fees)\b/.test(lower)&&amount!=null&&f.dt){f.type='bill';f.amount=amount;f.cat=catOf(lower)||'bills';return f}
   let mm;
@@ -211,7 +220,7 @@ function tSum(id){
 }
 function assignThread(l){
   const prev=S.lines.filter(x=>x!==l&&x.ts<=l.ts).sort((a,b)=>b.ts-a.ts)[0];
-  if(['ask','live','secret','note','message','hold','credit','debt','invoice'].includes(l.type))return null;
+  if(['ask','live','secret','note','message','hold','credit','debt','invoice','status','reading','ref'].includes(l.type))return null;
   if(l.type==='payment'){
     if(personBal(l.f.person,l.ts)>0)return null;
     const open=Object.keys(S.threads).map(id=>({id,s:tSum(id)})).filter(o=>o.s.left>0).sort((a,b)=>S.threads[b.id].created-S.threads[a.id].created)[0];
@@ -262,12 +271,17 @@ function search(q,now){const words=q.split(/\s+/).filter(w=>w.length>1);const ca
   const hits=S.lines.filter(l=>l.type!=='ask'&&l.type!=='secret'&&l.ts<=now&&(words.every(w=>l.text.toLowerCase().includes(w))||(cat&&(l.f.cat===cat||catOf(l.text.toLowerCase())===cat)))).sort((a,b)=>b.ts-a.ts).slice(0,4);
   return hits.length?hits.map(l=>'"'+l.text+'" ('+fD(l.ts)+')').join(' · '):'Nothing found for "'+q+'"';}
 function related(text,excludeId){const kw=[...keywords(text)];if(!kw.length)return null;let best=null,score=0;
-  S.lines.forEach(l=>{if(l.id===excludeId||['ask','secret','signal'].includes(l.type))return;const k2=keywords(l.text);let s=0;kw.forEach(k=>{if(k2.has(k))s++});if(s>score){score=s;best=l}});return best}
+  S.lines.forEach(l=>{if(l.id===excludeId||['ask','secret','signal','status','ref'].includes(l.type))return;const k2=keywords(l.text);let s=0;kw.forEach(k=>{if(k2.has(k))s++});if(s>score){score=s;best=l}});return best}
 
 function ord(n){const s=(n%100>=11&&n%100<=13)?'th':({1:'st',2:'nd',3:'rd'}[n%10]||'th');return n+s}
+function whenMonth(w){if(!w)return null;const k=w.toLowerCase().slice(0,3);return MON[k]!==undefined?MON[k]:null}
+function whenTxt(f){return f.when?' · expected '+f.when:''}
+function matches(l,title){if(['status','ask','secret'].includes(l.type))return false;const x=l.text.toLowerCase().trim(),t=title.toLowerCase();return t.length>=2&&(x===t||x.startsWith(t)||t.startsWith(x)&&x.length>=3)}
+function stateOf(l){let st=null;S.lines.forEach(s=>{if(s.type==='status'&&s.ts>l.ts&&matches(l,s.f.title))st={state:s.f.state,ts:s.ts}});return st}
+function targetOf(s){return S.lines.filter(l=>l.ts<s.ts&&matches(l,s.f.title)).sort((a,b)=>b.ts-a.ts)[0]}
 function salaryTxt(){return ' · on salary day'+(S.rhythms.salaryDay?' ('+ord(S.rhythms.salaryDay)+')':' · when is it? tap')}
 // ---------- meaning beside a line ----------
-const TL={transfer:'Transfer',signal:'Noted',event:'Event',money:'Money',math:'Math',task:'To do',payment:'Received',note:'Note',ask:'Answer',secret:'Secret',link:'Link',live:'Live answer',message:'Reminder',hold:'Held',credit:'Owed to you',debt:'You owe',invoice:'Invoice',bill:'Bill',income:'Income'};
+const TL={status:'Update',reading:'Reading',ref:'Reference',transfer:'Transfer',signal:'Noted',event:'Event',money:'Money',math:'Math',task:'To do',payment:'Received',note:'Note',ask:'Answer',secret:'Secret',link:'Link',live:'Live answer',message:'Reminder',hold:'Held',credit:'Owed to you',debt:'You owe',invoice:'Invoice',bill:'Bill',income:'Income'};
 function meaning(l,now){
   const f=l.f;switch(l.type){
     case 'event':return (f.dt?fDT(f.dt):'Pick a date')+(f.amount?' · '+rs(f.amount):'');
@@ -281,9 +295,12 @@ function meaning(l,now){
     case 'live':return f.answer;
     case 'message':return f.dt?fT(f.dt.date)+' · say it to '+f.person:'Say it to '+f.person+' · when?';
     case 'hold':return 'Held for '+f.person+' · waiting in their chat';
-    case 'credit':return f.person+' owes you '+rs(f.amount)+' · now '+rs(Math.max(0,personBal(f.person,now)));
+    case 'credit':return f.person+' owes you '+rs(f.amount)+' · now '+rs(Math.max(0,personBal(f.person,now)))+whenTxt(f);
+    case 'status':{const t=targetOf(l);return t?(f.state==='on'?'▶ watching · ':'✓ done · ')+(t.text.length>30?t.text.slice(0,28)+'…':t.text):(f.state==='on'?'▶ started':'✓ done')}
+    case 'reading':{if(f.oil)return 'at '+fN(f.km)+' km · next around '+fN(f.km+5000)+' km';const o=S.lines.filter(x=>x.type==='reading'&&x.f.oil&&!x.done&&x.ts<l.ts).sort((a,b)=>b.ts-a.ts)[0];return fN(f.km)+' km'+(o?(f.km-o.f.km>=4000?' · oil change due':' · oil in ~'+fN(Math.max(0,o.f.km+5000-f.km))+' km'):'')}
+    case 'ref':return 'Number · tap Copy';
     case 'invoice':return f.person+' owes you '+rs(f.amount)+(f.dt?' · due '+fD(f.dt.date):'');
-    case 'debt':return 'You owe '+f.person+' '+rs(f.amount);
+    case 'debt':return 'You owe '+f.person+' '+rs(f.amount)+whenTxt(f);
     case 'bill':return rs(f.amount)+' · due '+fD(f.dt.date)+(l.done?' · paid':'');
     case 'transfer':return (l.done?'Done · ':'')+rs(f.amount)+' · '+f.from+' → '+f.to+(f.trigger?salaryTxt():'');
     case 'signal':return 'Salary noted'+(S.rhythms.salaryDay?' · usually the '+ord(S.rhythms.salaryDay):'');
@@ -306,6 +323,10 @@ function voices(now){
     if(l.type==='bill'&&!l.done){const t2=at(addD(sod(f.dt.date),-2),9);if(t2>l.ts)push(t2,'b2'+id,`In 2 days. ${clean(l)}, ${rs(f.amount)}.`,['Paid'],id);push(at(f.dt.date,9),'bd'+id,`Due today. ${clean(l)}, ${rs(f.amount)}.`,['Paid'],id)}
     if(l.type==='invoice'&&f.dt){const t=at(f.dt.date,9);if(personBal(f.person,t)>0)push(t,'iv'+id,`${f.person}'s invoice is due today. ${rs(personBal(f.person,t))} still owed.`,['Copy a polite reminder'],id)}
     if(l.type==='credit'){const t=at(addD(sod(l.ts),7),10);if(personBal(f.person,t)>0)push(t,'cr'+id,`${f.person} still owes you ${rs(personBal(f.person,t))}.`,['Copy a polite reminder'],id)}
+    if((l.type==='credit'||l.type==='debt')&&whenMonth(f.when)!==null){const mo=whenMonth(f.when);let d=new Date(l.ts.getFullYear(),mo,1,10);if(d<=l.ts)d=new Date(l.ts.getFullYear()+1,mo,1,10);const b=personBal(f.person,d);
+      if(l.type==='credit'&&b>0)push(d,'wm'+id,`${MS[mo]} is here. ${f.person} still owes you ${rs(b)}.`,['Copy a polite reminder'],id);
+      if(l.type==='debt'&&!l.done&&b<0)push(d,'wm'+id,`${MS[mo]} is here. You said you'd repay ${f.person} ${rs(-b)}.`,['Done'],id)}
+    if(l.type==='reading'&&!f.oil){const o=S.lines.filter(x=>x.type==='reading'&&x.f.oil&&!x.done&&x.ts<l.ts).sort((a,b)=>b.ts-a.ts)[0];if(o&&f.km-o.f.km>=4000)push(l.ts,'oil'+o.id,`Oil change due. Last at ${fN(o.f.km)} km.`,['Done'],o.id)}
     if(f.trigger==='salary'&&!l.done){const t=nextSalary(l.ts);if(t)push(t,'sal'+id,`Salary day. ${l.type==='transfer'?'Move '+rs(f.amount)+' '+f.from+' → '+f.to:l.text}.`,['Done'],id)}
   });
   Object.keys(S.threads).forEach(id=>{const s=tSum(id),n=S.threads[id].name;
@@ -429,10 +450,10 @@ function lineHTML(l,now){
   if(l.type==='secret'&&!l.revealed&&f.secret)f.secret.forEach(s=>tx=tx.replace(esc(s),'<span class="mask">••••••</span>'));
   if(l.type==='link'&&f.url){const u=/^https?:/.test(f.url)?f.url:'https://'+f.url;tx=tx.replace(esc(f.url),`<a href="${esc(u)}" target="_blank" rel="noopener">${esc(f.url)}</a>`)}
   const fade=l.type==='live'&&l.ts<sod(now)&&!S.pinned[l.id];
-  const mn=meaning(l,now);const t=l.thread&&S.threads[l.thread];
+  const so=['status','ask','secret'].includes(l.type)?null:stateOf(l);let mn=meaning(l,now);if(so)mn=(so.state==='on'?'▶ watching':'✓ done '+fD(so.ts))+(mn?' · '+mn:'');const t=l.thread&&S.threads[l.thread];
   const r=l.rel&&S.lines.find(x=>x.id===l.rel);
   const ppl=(f.people||[]).map(p=>`<span class="pill" data-p="${esc(p)}">${esc(p)}</span>`).join('');
-  return `<div class="me ${l.done?'done':''} ${fade?'faded':''}" data-id="${l.id}"><div class="tx">${tx}</div>${(mn||t||ppl||r)?`<div class="mn">${mn?`<span class="v ${['math','ask','live','transfer'].includes(l.type)?'strong':''}">${esc(fade?'faded · tap to keep':mn)}</span>`:''}${t?`<span class="pill" data-th="${t.id}">${esc(t.name)}</span>`:''}${ppl}${r?`<span class="rel">↳ ${esc(r.text.length>48?r.text.slice(0,46)+'…':r.text)} · ${fD(r.ts)}</span>`:''}</div>`:''}</div>`;
+  return `<div class="me ${l.done?'done':''} ${fade?'faded':''}" data-id="${l.id}"><div class="tx">${tx}</div>${(mn||t||ppl||r)?`<div class="mn">${mn?`<span class="v ${['math','ask','live','transfer'].includes(l.type)?'strong':''}">${esc(fade?'faded · tap to keep':mn)}</span>`:''}${t?`<span class="pill" data-th="${t.id}">${esc(t.name)}</span>`:''}${l.type==='ref'?`<span class="pill" data-copy="${esc(l.f.copy)}">Copy</span>`:''}${ppl}${r?`<span class="rel">↳ ${esc(r.text.length>48?r.text.slice(0,46)+'…':r.text)} · ${fD(r.ts)}</span>`:''}</div>`:''}</div>`;
 }
 function voiceHTML(v,old){
   return `<div class="ink ${old?'old':''}"><span class="dot"></span><div><div>${esc(v.text)}</div>${v.acts.length?`<div class="acts">${v.acts.map(a=>`<span class="ab ${S.acted[v.key+a]?'on':''}" data-k="${v.key}" data-a="${esc(a)}" data-ref="${v.ref||''}">${esc(a)}</span>`).join('')}</div>`:''}</div></div>`;
@@ -468,8 +489,14 @@ function help(){openOv('How to use Memento',`
   <div class="row"><span>Imran 3400 udhaar</span><span class="muted">owed to you</span></div>
   <div class="row"><span>send 40000 from meezan to ubl on next salary</span><span class="muted">life-event</span></div>
   <div class="row"><span>salary came</span><span class="muted">signal</span></div>
+  <div class="row"><span>5,000 Imran (Dec)</span><span class="muted">lent, back in Dec</span></div>
+  <div class="row"><span>took 3,000 from Ali</span><span class="muted">you owe</span></div>
+  <div class="row"><span>F1, later: watched F1</span><span class="muted">ticks it</span></div>
+  <div class="row"><span>oil changed at 68,946 km</span><span class="muted">car</span></div>
   <div class="row"><span>for Ali: plumber 0300…</span><span class="muted">held for Ali</span></div>
   <div class="row"><span>netflix password abc@x.com pass99</span><span class="muted">secret</span></div>
+  <div class="row"><span>bank security pic: red car</span><span class="muted">secret</span></div>
+  <div class="row"><span>UBL 0123 4567 8901</span><span class="muted">copy</span></div>
   <div class="row"><span>?dentist</span><span class="muted">find</span></div>
   <div class="row"><span>how much on food this week?</span><span class="muted">ask</span></div>
   <div class="row"><span>who owes me?</span><span class="muted">ask</span></div>
@@ -497,6 +524,7 @@ document.querySelector('.app').addEventListener('click',e=>{
   if(t.dataset.o){const o=t.dataset.o;if(o==='salary'){askSalary();return}if(o==='export'){exportText();return}if(o==='help'){help();return}({coming:ovComing,money:ovMoney,threads:ovThreads,people:ovPeople})[o]();return}
   if(t.id==='back'){closeOv();return}
   if(t.tagName==='A')return;
+  if(t.dataset.copy){e.stopPropagation();try{navigator.clipboard.writeText(t.dataset.copy);toast('Copied')}catch(err){toast('Could not copy')}return}
   if(t.dataset.th){e.stopPropagation();ovThread(t.dataset.th);return}
   const card=t.closest('[data-th]');if(card&&card.classList.contains('card')){ovThread(card.dataset.th);return}
   if(t.dataset.p){e.stopPropagation();ovPerson(t.dataset.p);return}
