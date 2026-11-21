@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.2.1 · 22 Nov 2026
+- Updates itself: on opening, Memento checks for a newer version and reloads if there is one, then shows "Updated to alpha x". Skips while you're typing.
+
 ## 0.2.0 · 22 Nov 2026
 Focus: accept everything, master a few. Memento now speaks up only about money between people, things tied to a moment, and bringing things back.
 - Switched off (lines are kept as written): splits ("/4"), budgets, currency, income, auto-threads, "held for" and message cards.
