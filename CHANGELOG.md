@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0 · 22 Nov 2026
+Focus: accept everything, master a few. Memento now speaks up only about money between people, things tied to a moment, and bringing things back.
+- Switched off (lines are kept as written): splits ("/4"), budgets, currency, income, auto-threads, "held for" and message cards.
+- Bills become tasks with an amount; invoices become "owes you".
+- Spending is honest: "written down this week · from N lines", only confident lines count, no guessed categories, weekly card only after 3+ lines.
+- Years, room and flat numbers are no longer read as money.
+- Calculator stays as a quiet extra ("rent 95000 / 3").
+
 ## 0.1.2 · 22 Nov 2026
 From Osama's Google Keep habits.
 - Loans the way you write them: "5,000 Imran (Dec)" means Imran owes you; "gave Bilal 2000"; "took 3,000 from Ali". A month in brackets brings it back on the 1st of that month.

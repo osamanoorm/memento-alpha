@@ -84,7 +84,7 @@ select{font:inherit;font-size:14px;padding:6px;border-radius:8px;border:1px soli
   <div class="toast" id="toast"></div>
 </div>
 <script>
-const VERSION='0.1.2';
+const VERSION='0.2.0';
 // ---------- basics ----------
 const WDA={sun:0,sunday:0,mon:1,monday:1,tue:2,tues:2,tuesday:2,wed:3,wednesday:3,thu:4,thur:4,thurs:4,thursday:4,fri:5,friday:5,sat:6,saturday:6,jumma:5,juma:5,jumeraat:4,itwaar:0,itwar:0,mangal:2,budh:3};
 const MON={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,sept:8,oct:9,nov:10,dec:11};
@@ -169,12 +169,12 @@ function parse(text,base,prevVal){
   if((m=text.match(/^(watched|finished watching|finished reading|done reading|finished|saw|started watching|started reading|started|watching|reading now|now watching)\s+(.+)$/i))&&!/\d{3,}/.test(m[2])){f.type='status';f.state=/^(started|watching|reading now|now watching)/i.test(m[1])?'on':'done';f.verb=m[1].toLowerCase();f.title=m[2].trim();f.people=[];return f}
   if((m=lower.match(/(\d[\d,]*)\s?(?:km|kms|kilometers?|kilometres?)\b/))){f.type='reading';f.km=num(m[1]);f.oil=/\boil\b/.test(lower);f.people=[];return f}
   {const rm=text.match(/\b(PK\d{2}[A-Z]{4}[\d ]{10,30}|\d[\d \-]{8,}\d)\b/i);if(rm&&!/,/.test(rm[1])&&rm[1].replace(/\D/g,'').length>=10){f.type='ref';f.copy=rm[1].replace(/[\s-]/g,'');f.people=[];return f}}
-  if((m=lower.match(/(\d+(?:\.\d+)?)\s*([a-z]{3})\s+(?:to|in)\s+([a-z]{3})\b/))&&RATES[m[2]]&&RATES[m[3]]){
+  if(false){
     const v=num(m[1])*RATES[m[2]]/RATES[m[3]],ly=num(m[1])*RATES_LY[m[2]]/RATES_LY[m[3]];
     f.type='live';f.answer=`${m[1]} ${m[2].toUpperCase()} ≈ ${v.toFixed(2)} ${m[3].toUpperCase()} (rough offline rate)`+(/last year|vs/.test(lower)?` · ${ly.toFixed(2)} a year ago (${(v>=ly?'+':'')+((v/ly-1)*100).toFixed(1)}%)`:'');return f}
   if((m=lower.match(/^(?:weather|how'?s the weather)(?:\s+in)?\s+([a-z]+)/))){f.type='note';return f}
-  if((m=text.match(/^(?:hi|hello|salam|salaam|wish|congratulate|tell|message|msg|text|whatsapp)\b.*?\bto\s+([A-Za-z]+)/i))||(m=text.match(/^(?:hi|hello|salam|salaam)\s+([A-Za-z]+)/i))){f.type='message';f.person=cap(m[1].toLowerCase());if(!f.people.includes(f.person))f.people.push(f.person);return f}
-  if((m=text.match(/^(?:for|send to|forward to|share with)\s+([A-Za-z]+)\s*[:,\-]?\s*(.*)$/i))){f.type='hold';f.person=cap(m[1].toLowerCase());f.body=m[2];if(!f.people.includes(f.person))f.people.push(f.person);return f}
+  if((m=text.match(/^(?:hi|hello|salam|salaam|wish|congratulate|tell|message|msg|text|whatsapp)\b.*?\bto\s+([A-Za-z]+)/i))||(m=text.match(/^(?:hi|hello|salam|salaam)\s+([A-Za-z]+)/i))){f.type='note';f.kind='message';f.person=cap(m[1].toLowerCase());if(!f.people.includes(f.person))f.people.push(f.person);return f}
+  if((m=text.match(/^(?:for|send to|forward to|share with)\s+([A-Za-z]+)\s*[:,\-]?\s*(.*)$/i))){f.type='note';f.kind='hold';f.person=cap(m[1].toLowerCase());f.body=m[2];if(!f.people.includes(f.person))f.people.push(f.person);return f}
   if((m=text.match(/^([A-Za-z][a-z]+)\s+(paid|sent|gave|returned|transferred)\s+(?:me\s+|back\s+)*(?:rs\.?\s?)?(\d[\d,]*(?:\.\d+)?)(k)?/i))&&!/^(i|we)$/i.test(m[1])){f.type='payment';f.person=cap(m[1].toLowerCase());f.amount=num(m[3],m[4]);return f}
   if((m=lower.match(/^(?:i owe|owe)\s+([a-z]+)\s+(?:rs\.?\s?)?(\d[\d,]*)(k)?/))||(m=lower.match(/^borrowed\s+(?:rs\.?\s?)?(\d[\d,]*)(k)?\s+from\s+([a-z]+)/))){
     const p=isNaN(num(m[1]))?m[1]:m[3];const a=isNaN(num(m[1]))?num(m[2],m[3]):num(m[1],m[2]);f.type='debt';f.when=when;f.person=cap(p);f.amount=a;f.people.push(f.person);return f}
@@ -183,15 +183,17 @@ function parse(text,base,prevVal){
   if((m=text.match(/^(?:gave|lent)\s+([A-Za-z]+)\s+(?:rs\.?\s?)?(\d[\d,]*(?:\.\d+)?)(k)?/i))){f.type='credit';f.amount=num(m[2],m[3]);f.person=cap(m[1].toLowerCase());f.people=[f.person];f.when=when;return f}
   if((m=text.match(/^(?:took|borrowed)\s+(?:rs\.?\s?)?(\d[\d,]*(?:\.\d+)?)(k)?\s+from\s+([A-Za-z]+)/i))){f.type='debt';f.amount=num(m[1],m[2]);f.person=cap(m[3].toLowerCase());f.people=[f.person];f.when=when;return f}
   const am=st.match(/(?<![a-z])(?:rs\.?\s?|pkr\s?|\$\s?)?(\d[\d,]*(?:\.\d+)?)(k)?\b(?!\s?(?:people|persons|pax|bags?|kg|pcs|pieces))/i);
-  const amount=am?num(am[1],am[2]):null;
+  let amount=am?num(am[1],am[2]):null;
+  if(/^\s*[+\-*x×\/÷]\s*\d/i.test(st)||/\b\d+(?:\.\d+)?\s*(usd|pkr|myr|eur|gbp|aed|sar|inr)\s+(to|in)\s+[a-z]{3}\b/.test(lower)||/\b(salary|allowance|income|bonus|received|got paid)\b/.test(lower)){f.type='note';return f}
+  if(am&&(/^(19|20)\d\d$/.test(am[1])||/\b(room|flat|house|apt|apartment|gate|block|street|st|no|plot|sector|phase|floor|seat|gen|season|part|vol|chapter|episode|ep|iphone|ps)\.?\s*#?\s*$/i.test(st.slice(0,st.indexOf(am[0])))))amount=null;
   if(/\b(udhaa?r|owes me|lent|loan to|on credit|baqi)\b/.test(lower)&&amount!=null){const all=st.match(/\d[\d,]*(?:\.\d+)?k?/g)||[];f.type='credit';f.when=when;f.amount=num(all[all.length-1].replace(/k/i,''),/k/i.test(all[all.length-1]));f.person=f.people[0]||cap(lower.split(' ')[0]);if(!f.people.includes(f.person))f.people.unshift(f.person);return f}
-  if(/\binvoice\b/.test(lower)&&amount!=null){f.type='invoice';f.amount=amount;const pre=text.split(/\binvoice\b/i)[0].trim();f.person=pre?pre.split(/\s+/).map(w=>cap(w.toLowerCase())).join(' '):(f.people[0]||'Client');f.people=[f.person];return f}
-  if(/\b(due|bill|fees)\b/.test(lower)&&amount!=null&&f.dt){f.type='bill';f.amount=amount;f.cat=catOf(lower)||'bills';return f}
+  if(/\binvoice\b/.test(lower)&&amount!=null){f.type='credit';f.when=f.dt?fD(f.dt.date):when;f.amount=amount;const pre=text.split(/\binvoice\b/i)[0].trim();f.person=pre?pre.split(/\s+/).map(w=>cap(w.toLowerCase())).join(' '):(f.people[0]||'Client');f.people=[f.person];return f}
+  if(/\b(due|bill|fees)\b/.test(lower)&&amount!=null&&f.dt){f.type='task';f.amount=amount;return f}
   let mm;
-  if((mm=st.match(/^\s*([+\-*x×\/÷])\s*(\d[\d,]*(?:\.\d+)?k?)/i))&&prevVal!=null){const v=evalExpr(prevVal+mm[1]+mm[2]);if(v!=null){f.type='math';f.math={value:v,op:mm[1],n:num(mm[2].replace(/k/i,''),/k/i.test(mm[2])),fromPrev:true};return f}}
+  if(false){const v=evalExpr(prevVal+mm[1]+mm[2]);if(v!=null){f.type='math';f.math={value:v,op:mm[1],n:num(mm[2].replace(/k/i,''),/k/i.test(mm[2])),fromPrev:true};return f}}
   if((mm=st.match(/(\d+(?:\.\d+)?)\s?%\s?of\s(\d[\d,]*(?:\.\d+)?k?)/i))){f.type='math';f.math={value:num(mm[1])/100*evalExpr(mm[2]),op:'%'};return f}
-  if((mm=st.match(/(\d[\d,]*(?:\.\d+)?k?(?:\s?h(?:rs|ours)?)?(?:\s*[+\-*x×\/÷]\s*\d[\d,]*(?:\.\d+)?k?(?:\s?h(?:rs|ours)?)?)+)/i))){const v=evalExpr(mm[1]);if(v!=null){f.type='math';f.math={value:v,op:(mm[1].match(/[+\-*x×\/÷]/)||[''])[0]};f.budget=/\b(trip|budget|plan|wedding|holiday)\b/.test(lower);return f}}
-  if(/\b(allowance|salary|received|got paid|income|bonus)\b/.test(lower)&&amount!=null){f.type='income';f.amount=amount;return f}
+  if((mm=st.match(/(\d[\d,]*(?:\.\d+)?k?(?:\s?h(?:rs|ours)?)?(?:\s*[+\-*x×\/÷]\s*\d[\d,]*(?:\.\d+)?k?(?:\s?h(?:rs|ours)?)?)+)/i))){const v=evalExpr(mm[1]);if(v!=null){f.type='math';f.math={value:v,op:(mm[1].match(/[+\-*x×\/÷]/)||[''])[0]};f.budget=false;return f}}
+  
   const as=text.match(/^([A-Za-z][a-z]+)\s+(brings|will bring|to bring|will|should|needs to)\b/i);
   f.assignee=as&&!/^(i|we|you)$/i.test(as[1])?cap(as[1].toLowerCase()):null;
   if((f.dt&&/\b(due|deadline|submission)\b/.test(lower))||TASKV.test(lower)||/\b(need to|remember to|don'?t forget|have to)\b/.test(lower)||f.assignee){f.type='task';return f}
@@ -218,7 +220,9 @@ function tSum(id){
   let owed=null,left=null,pleft=0;if(split){owed=split.share*(split.n-1);left=Math.max(0,owed-recv);pleft=Math.max(0,split.n-1-payers.length)}
   return {L,spent,split,recv,payers,owed,left,pleft,budget,ev,tasks};
 }
-function assignThread(l){
+function assignThread(l){return null;
+}
+function assignThreadOld(l){
   const prev=S.lines.filter(x=>x!==l&&x.ts<=l.ts).sort((a,b)=>b.ts-a.ts)[0];
   if(['ask','live','secret','note','message','hold','credit','debt','invoice','status','reading','ref'].includes(l.type))return null;
   if(l.type==='payment'){
@@ -265,7 +269,7 @@ function answer(text,now){
   const ign=new Set('how much many total spent spend on did i what this month week today the for in all'.split(' '));
   const kws=cat?[]:lw.replace(/[^a-z ]/g,' ').split(/\s+/).filter(w=>w.length>2&&!ign.has(w));
   const L=spendIn(from,now,l=>cat?(l.f.cat===cat||catOf(l.text.toLowerCase())===cat):(!kws.length||kws.some(k=>l.text.toLowerCase().includes(k)||(l.thread&&S.threads[l.thread].name.toLowerCase().includes(k)))));
-  return `${rs(L.reduce((a,l)=>a+l.f.amount,0))}${cat?' on '+cat:kws.length?' on '+kws.join(' '):''}${lab} · ${L.length} ${L.length===1?'line':'lines'}`;
+  return `${rs(L.reduce((a,l)=>a+l.f.amount,0))} written down${cat?' on '+cat:kws.length?' on '+kws.join(' '):''}${lab} · from ${L.length} ${L.length===1?'line':'lines'}`;
 }
 function search(q,now){const words=q.split(/\s+/).filter(w=>w.length>1);const cat=Object.keys(CATS).find(c=>q.includes(c));
   const hits=S.lines.filter(l=>l.type!=='ask'&&l.type!=='secret'&&l.ts<=now&&(words.every(w=>l.text.toLowerCase().includes(w))||(cat&&(l.f.cat===cat||catOf(l.text.toLowerCase())===cat)))).sort((a,b)=>b.ts-a.ts).slice(0,4);
@@ -288,7 +292,7 @@ function meaning(l,now){
     case 'money':return rs(f.amount)+(f.cat?' · '+f.cat:'')+(f.items?' · '+f.items.length+' items':'');
     case 'income':return '+ '+rs(f.amount)+' in';
     case 'math':return '= '+fN(f.math.value)+(f.math.fromPrev&&/[\/÷]/.test(f.math.op)?' each':'')+(f.budget?' · budget':'');
-    case 'task':return l.done?'Done':((f.assignee?f.assignee+' · ':'')+(f.trigger?salaryTxt().slice(3):(f.dt?'due '+fDT(f.dt):'whenever')));
+    case 'task':return l.done?'Done':((f.amount?rs(f.amount)+' · ':'')+(f.assignee?f.assignee+' · ':'')+(f.trigger?salaryTxt().slice(3):(f.dt?'due '+fDT(f.dt):'whenever')));
     case 'payment':return f.person+' paid you '+rs(f.amount);
     case 'secret':return 'Locked · tap to reveal · this device only';
     case 'link':return 'Link'+(f.label?' · '+f.label:'');
@@ -333,7 +337,7 @@ function voices(now){
     if(s.split){const t=at(addD(sod(s.split.at),1),10);const left=s.owed-S.lines.filter(l=>l.thread===id&&l.type==='payment'&&l.ts<=t).reduce((a,l)=>a+l.f.amount,0);if(left>0)push(t,'sp'+id,`${n}: ${rs(left)} still to come in from friends.`,['Copy a reminder for the group'])}
     if(s.budget){const sp=s.spent;if(sp>=s.budget*.8){const last=s.L.filter(l=>['money','event','bill'].includes(l.type)).pop();if(last)push(addM(last.ts,1),'bg'+id,`${n}: ${rs(sp)} of ${rs(s.budget)} used.`)}}
   });
-  if(S.lines.length){const first=sod(S.lines.reduce((a,l)=>l.ts<a?l.ts:a,S.lines[0].ts));for(let d=first;d<=now;d=addD(d,1)){if(d.getDay()===0){const t=at(d,20);const L=spendIn(weekStart(d),t);if(L.length){const by={};L.forEach(l=>{const c=l.f.cat||catOf(l.text.toLowerCase())||'other';by[c]=(by[c]||0)+l.f.amount});const top=Object.entries(by).sort((a,b)=>b[1]-a[1])[0];push(t,'wk'+d.getTime(),`This week: ${rs(L.reduce((a,l)=>a+l.f.amount,0))}. Most on ${top[0]}.`)}}}}
+  if(S.lines.length){const first=sod(S.lines.reduce((a,l)=>l.ts<a?l.ts:a,S.lines[0].ts));for(let d=first;d<=now;d=addD(d,1)){if(d.getDay()===0){const t=at(d,20);const L=spendIn(weekStart(d),t);if(L.length>=3){push(t,'wk'+d.getTime(),`This week you wrote down ${rs(L.reduce((a,l)=>a+l.f.amount,0))} across ${L.length} lines.`)}}}}
   return V.filter(v=>now-v.ts<21*864e5);
 }
 function nextSalary(after){let best=null;S.lines.forEach(l=>{if(l.type==='signal'&&l.ts>after&&(!best||l.ts<best))best=l.ts});if(S.rhythms.salaryDay){let d=new Date(after.getFullYear(),after.getMonth(),S.rhythms.salaryDay,9);if(d<=after)d=new Date(after.getFullYear(),after.getMonth()+1,S.rhythms.salaryDay,9);if(!best||d<best)best=d}return best}
@@ -354,9 +358,9 @@ const closeOv=()=>document.getElementById('ov').style.display='none';
 function ovComing(){const now=NOW();const u=upcoming(now);openOv('Coming up',u.length?u.map(x=>`<div class="row"><span>${esc(x.s)}</span></div>`).join(''):'<div class="muted">Nothing ahead.</div>')}
 function ovMoney(){
   const now=NOW();const wk=spendIn(weekStart(now),now),mo=spendIn(new Date(now.getFullYear(),now.getMonth(),1),now);const sum=a=>a.reduce((x,l)=>x+l.f.amount,0);
-  const by={};mo.forEach(l=>{const c=l.f.cat||catOf(l.text.toLowerCase())||'other';by[c]=(by[c]||0)+l.f.amount});
-  let h=`<div class="card"><div class="muted">This week</div><div class="big">${rs(sum(wk))}</div><div class="muted">This month ${rs(sum(mo))}</div></div>`;
-  if(Object.keys(by).length)h+='<div class="sec">This month by kind</div>'+Object.entries(by).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="row"><span>${cap(k)}</span><span>${rs(v)}</span></div>`).join('');
+  const by={};mo.forEach(l=>{const c=l.f.cat||'other';by[c]=(by[c]||0)+l.f.amount});
+  let h=`<div class="card"><div class="muted">Written down this week</div><div class="big">${rs(sum(wk))}</div><div class="muted">from ${wk.length} lines · this month ${rs(sum(mo))} from ${mo.length}</div><div class="muted" style="margin-top:6px">Only what you wrote, not all your spending.</div></div>`;
+  if(Object.keys(by).length)h+='<div class="sec">This month by kind (from your words)</div>'+Object.entries(by).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="row"><span>${cap(k)}</span><span>${rs(v)}</span></div>`).join('');
   const owed=[];Object.keys(S.threads).forEach(id=>{const s=tSum(id);if(s.left>0)owed.push([S.threads[id].name+` (${s.pleft} people)`,s.left])});allPeople().forEach(p=>{const b=personBal(p,now);if(b>0)owed.push([p,b])});
   if(owed.length)h+='<div class="sec">Owed to you</div>'+owed.map(o=>`<div class="row"><span>${esc(o[0])}</span><span>${rs(o[1])}</span></div>`).join('');
   const you=allPeople().map(p=>[p,personBal(p,now)]).filter(x=>x[1]<0);if(you.length)h+='<div class="sec">You owe</div>'+you.map(o=>`<div class="row"><span>${esc(o[0])}</span><span>${rs(-o[1])}</span></div>`).join('');
@@ -381,7 +385,7 @@ function ovPerson(p){
 function openSheet(id){
   const l=S.lines.find(x=>x.id===id);const bg=document.getElementById('sheetbg');
   if(l.type==='secret'&&!l.revealed){if(confirmReveal(l))return}
-  const types=['event','money','math','task','transfer','note','link','secret','bill','credit','income'];
+  const types=['task','event','credit','debt','money','math','note','link','secret'];
   document.getElementById('sheet').innerHTML=`<b>This line</b><textarea id="ed" rows="2" style="margin-top:8px">${esc(l.text)}</textarea>
    <div class="muted" style="margin-top:6px">It is:</div><div class="tps">${types.map(t=>`<span class="tp ${l.type===t?'on':''}" data-t="${t}">${TL[t]}</span>`).join('')}</div>
    <div class="muted">Belongs with:</div><select id="th" style="width:100%;margin:4px 0 10px"><option value="">Nothing</option><option value="new">Start a new thread</option>${Object.values(S.threads).map(t=>`<option value="${t.id}" ${l.thread===t.id?'selected':''}>${esc(t.name)}</option>`).join('')}</select>
@@ -463,7 +467,6 @@ function voiceHTML(v,old){
 function openMenu(){openOv('Memento',`
   <button class="mi" data-o="coming">Coming up</button>
   <button class="mi" data-o="money">Money</button>
-  <button class="mi" data-o="threads">Threads</button>
   <button class="mi" data-o="people">People</button>
   <button class="mi" data-o="salary">Salary day${S.rhythms.salaryDay?' · '+ord(S.rhythms.salaryDay):''}</button>
   <button class="mi" data-o="export">Export everything as text</button>
@@ -482,7 +485,7 @@ function help(){openOv('How to use Memento',`
   <div class="sec">Try</div>
   <div class="row"><span>dentist tue 5pm</span><span class="muted">event</span></div>
   <div class="row"><span>groceries 1850</span><span class="muted">money</span></div>
-  <div class="row"><span>dinner 4800 then /4</span><span class="muted">split</span></div>
+  <div class="row"><span>rent 95000 / 3</span><span class="muted">maths</span></div>
   <div class="row"><span>call mom tonight</span><span class="muted">to do</span></div>
   <div class="row"><span>Ali brings cake friday</span><span class="muted">someone else's to do</span></div>
   <div class="row"><span>Bilal paid 1200</span><span class="muted">received</span></div>
@@ -493,7 +496,6 @@ function help(){openOv('How to use Memento',`
   <div class="row"><span>took 3,000 from Ali</span><span class="muted">you owe</span></div>
   <div class="row"><span>F1, later: watched F1</span><span class="muted">ticks it</span></div>
   <div class="row"><span>oil changed at 68,946 km</span><span class="muted">car</span></div>
-  <div class="row"><span>for Ali: plumber 0300…</span><span class="muted">held for Ali</span></div>
   <div class="row"><span>netflix password abc@x.com pass99</span><span class="muted">secret</span></div>
   <div class="row"><span>bank security pic: red car</span><span class="muted">secret</span></div>
   <div class="row"><span>UBL 0123 4567 8901</span><span class="muted">copy</span></div>
