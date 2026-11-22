@@ -84,7 +84,7 @@ select{font:inherit;font-size:14px;padding:6px;border-radius:8px;border:1px soli
   <div class="toast" id="toast"></div>
 </div>
 <script>
-const VERSION='0.3.0';
+const VERSION='0.3.1';
 // ---------- basics ----------
 const WDA={sun:0,sunday:0,mon:1,monday:1,tue:2,tues:2,tuesday:2,wed:3,wednesday:3,thu:4,thur:4,thurs:4,thursday:4,fri:5,friday:5,sat:6,saturday:6,jumma:5,juma:5,jumeraat:4,itwaar:0,itwar:0,mangal:2,budh:3};
 const MON={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,sept:8,oct:9,nov:10,dec:11};
@@ -428,7 +428,7 @@ function openSheet(id){
   document.getElementById('nr').onclick=()=>{const m=meaning(l,NOW());const msg=`Memento miss (alpha ${VERSION}): "${l.type==='secret'?'[secret line]':l.text}" read as ${TL[l.type]}${m&&l.type!=='secret'?': '+m:''}`;try{navigator.clipboard.writeText(msg);toast('Copied. Paste it in the research group.')}catch(err){toast('Could not copy')}};
   const pin=document.getElementById('pin');if(pin)pin.onclick=()=>{S.pinned[l.id]=!S.pinned[l.id];save();bg.style.display='none';render()};
   document.getElementById('dl').onclick=()=>{S.lines=S.lines.filter(x=>x!==l);tidy();save();bg.style.display='none';render()};
-  document.getElementById('sv').onclick=()=>{l.text=document.getElementById('ed').value.trim()||l.text;const f=parse(l.text,l.ts,prevVal(new Date(l.ts-1)));l.f=f;l.type=f.type;l.forced=null;
+  document.getElementById('sv').onclick=()=>{l.text=document.getElementById('ed').value.trim()||l.text;const f=parse(l.text,l.ts,prevVal(new Date(l.ts-1)));l.f=f;l.type=f.type;l.forced=null;applyDue(l);
     if(forced&&forced!==f.type){l.type=forced;const am=l.text.match(/(\d[\d,]*)(k)?/);if(['money','bill','credit','income'].includes(forced)&&am&&l.f.amount==null)l.f.amount=num(am[1],am[2]);l.forced=forced;if(forced==='bill'&&!l.f.dt)l.f.dt={date:addD(sod(l.ts),7),hasTime:false,tk:[]};if(forced==='credit'&&!l.f.person){l.f.person=cap(l.text.split(' ')[0].toLowerCase());l.f.people=[l.f.person]}if(forced==='secret'&&!l.f.secret)l.f.secret=l.text.split(/\s+/).slice(-1);if(forced==='math'&&!l.f.math)l.f.math={value:evalExpr((l.text.match(/[\d.,+\-*x×\/÷\s]+/)||['0'])[0])||0,op:''}}
     if(l.type==='ask')l.answer=answer(l.text,l.ts);
     const th=document.getElementById('th').value;l.thread=th==='new'?newThread(l):(th||null);tidy();save();bg.style.display='none';render()};
@@ -443,7 +443,7 @@ const KEY='memento-alpha',KEY_SEC='memento-alpha-secrets';
 let S={lines:[],threads:{},acted:{},pinned:{},rhythms:{},snooze:{}};let uid=1;
 const NOW=()=>new Date();
 function pack(){
-  const lines=S.lines.filter(l=>l.type!=='secret').map(l=>({id:l.id,text:l.text,ts:+l.ts,forced:l.forced||null,done:!!l.done,thread:l.thread||null,splitPay:!!l.splitPay,answer:l.answer||null,rel:l.rel||null,conn:l.conn||null}));
+  const lines=S.lines.filter(l=>l.type!=='secret').map(l=>({id:l.id,text:l.text,ts:+l.ts,forced:l.forced||null,done:!!l.done,thread:l.thread||null,splitPay:!!l.splitPay,answer:l.answer||null,rel:l.rel||null,conn:l.conn||null,due:l.due||null}));
   const threads={};Object.values(S.threads).forEach(t=>threads[t.id]={id:t.id,name:t.name,created:+t.created});
   return {v:1,app:VERSION,lines,threads,acted:S.acted,pinned:S.pinned,rhythms:S.rhythms,snooze:S.snooze,saved:Date.now()};
 }
@@ -452,7 +452,8 @@ function unpack(d,secrets){
   S={lines:[],threads:{},acted:d.acted||{},pinned:d.pinned||{},rhythms:d.rhythms||{},snooze:d.snooze||{}};
   Object.values(d.threads||{}).forEach(t=>S.threads[t.id]={id:t.id,name:t.name,created:new Date(t.created)});
   const raw=(d.lines||[]).concat((secrets||[]).map(x=>({...x,forced:null,thread:null}))).sort((a,b)=>a.ts-b.ts);
-  raw.forEach(r=>{const ts=new Date(r.ts);const f=parse(r.text,ts,prevVal(ts));S.lines.push({id:r.id,text:r.text,ts,f,type:r.forced||f.type,forced:r.forced,done:r.done,thread:r.thread,splitPay:r.splitPay,answer:r.answer,rel:r.rel,conn:r.conn})});
+  raw.forEach(r=>{const ts=new Date(r.ts);const f=parse(r.text,ts,prevVal(ts));S.lines.push({id:r.id,text:r.text,ts,f,type:r.forced||f.type,forced:r.forced,done:r.done,thread:r.thread,splitPay:r.splitPay,answer:r.answer,rel:r.rel,conn:r.conn,due:r.due})});
+  S.lines.forEach(applyDue);
   uid=Math.max(1,...S.lines.map(l=>l.id+1),...Object.keys(S.threads).map(k=>+k.slice(1)+1));
 }
 function save(){try{localStorage.setItem(KEY,JSON.stringify(pack()));localStorage.setItem(KEY_SEC,JSON.stringify(packSecrets()))}catch(e){toast('Could not save on this device')}}
@@ -490,15 +491,21 @@ function lineHTML(l,now){
   const so=['status','ask','secret'].includes(l.type)?null:stateOf(l);let mn=meaning(l,now);if(so)mn=(so.state==='on'?'▶ watching':'✓ done '+fD(so.ts))+(mn?' · '+mn:'');const t=l.thread&&S.threads[l.thread];
   const r=l.rel&&S.lines.find(x=>x.id===l.rel);
   const ppl=[...new Set(f.people||[])].map(p=>`<span class="pill" data-p="${esc(p)}">${esc(p)}</span>`).join('');
-  return `<div class="me ${l.done?'done':''} ${fade?'faded':''}" data-id="${l.id}"><div class="tx">${tx}</div>${(mn||t||ppl||r)?`<div class="mn">${mn?`<span class="v ${['math','ask','live','transfer'].includes(l.type)?'strong':''}">${esc(fade?'faded · tap to keep':mn)}</span>`:''}${t?`<span class="pill" data-th="${t.id}">${esc(t.name)}</span>`:''}${l.type==='ref'?`<span class="pill" data-copy="${esc(l.f.copy)}">Copy</span>`:''}${remindable(l)&&!l.done?`<span class="pill" data-cal="${l.id}">Remind me</span>`:''}${ppl}${r?`<span class="rel">↳ ${esc(r.text.length>48?r.text.slice(0,46)+'…':r.text)} · ${fD(r.ts)}</span>`:''}</div>`:''}${connHTML(l,now)}</div>`;
+  return `<div class="me ${l.done?'done':''} ${fade?'faded':''}" data-id="${l.id}"><div class="tx">${tx}</div>${(mn||t||ppl||r)?`<div class="mn">${mn?`<span class="v ${['math','ask','live','transfer'].includes(l.type)?'strong':''}">${esc(fade?'faded · tap to keep':mn)}</span>`:''}${t?`<span class="pill" data-th="${t.id}">${esc(t.name)}</span>`:''}${l.type==='ref'?`<span class="pill" data-copy="${esc(l.f.copy)}">Copy</span>`:''}${l.type==='task'&&!l.f.dt&&!l.f.trigger&&!l.done?`<span class="pill" data-when="${l.id}">When?</span>`:''}${remindable(l)&&!l.done?`<span class="pill" data-cal="${l.id}">Remind me</span>`:''}${ppl}${r?`<span class="rel">↳ ${esc(r.text.length>48?r.text.slice(0,46)+'…':r.text)} · ${fD(r.ts)}</span>`:''}</div>`:''}${connHTML(l,now)}</div>`;
 }
 function connHTML(l,now){const c=l.conn&&S.lines.find(x=>x.id===l.conn);if(!c)return '';
   const st=S.acted['cn'+l.id];if(st==='Not now')return '';const open=isOpen(c,now)||st==='Done';
   if(!open&&!st)return '';const old=now-l.ts>36*3600e3;
   return `<div class="ink ${old||st?'old':''}" style="margin:6px 0 2px"><span class="dot"></span><div><div>↳ ${esc(c.text)} · ${fD(c.ts)}</div><div style="font-size:13px;opacity:.75">${st==='Done'?'Marked done.':'Still on your list.'}</div>${st?'':`<div class="acts"><span class="ab" data-cn="${l.id}" data-a="Done">Done</span><span class="ab" data-cn="${l.id}" data-a="Not now">Not now</span></div>`}</div></div>`}
+function applyDue(l){if(l.due&&!l.f.dt)l.f.dt={date:new Date(l.due),hasTime:true,tk:[]}}
 function remindable(l){return (['event','task'].includes(l.type)&&l.f.dt)||(['credit','debt'].includes(l.type)&&whenMonth(l.f.when)!==null)}
 function remindAt(l){if(l.f.dt){const d=new Date(l.f.dt.date);if(!l.f.dt.hasTime)d.setHours(9,0,0,0);return d}const mo=whenMonth(l.f.when);let d=new Date(l.ts.getFullYear(),mo,1,10);if(d<=l.ts)d=new Date(l.ts.getFullYear()+1,mo,1,10);return d}
 function icsDate(d){const p=n=>String(n).padStart(2,'0');return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'T'+p(d.getHours())+p(d.getMinutes())+'00'}
+function askWhen(l){const n=NOW();const sat=(()=>{let d=addD(sod(n),(6-n.getDay()+7)%7||7);return at(d,10)})();let mon=at(addD(sod(n),(8-n.getDay())%7||7),9);if(mon-sod(n)<2*864e5)mon=addD(mon,7);
+  const opts=[['Tonight',at(n,20)],['Tomorrow morning',at(addD(n,1),9)],['This weekend',sat],['Next week',mon]].filter(o=>o[1]>n);
+  const bg=document.getElementById('sheetbg');document.getElementById('sheet').innerHTML=`<b>When should this come back?</b><p class="muted">${esc(l.text)}</p>${opts.map((o,i)=>`<button class="btn" data-i="${i}">${o[0]} · ${fD(o[1])}, ${fT(o[1])}</button>`).join('<br>')}<br><button class="btn" id="cx">Cancel</button>`;
+  bg.style.display='flex';document.getElementById('cx').onclick=()=>bg.style.display='none';
+  document.querySelectorAll('#sheet [data-i]').forEach(b=>b.onclick=()=>{const d=opts[+b.dataset.i][1];l.due=+d;l.f.dt=null;applyDue(l);save();bg.style.display='none';render();toast('Comes back '+fD(d)+', '+fT(d)+'. Tap Remind me for a phone alert.')})}
 function addToCalendar(l){const d=remindAt(l),e=new Date(+d+30*60e3);const title=(l.type==='credit'||l.type==='debt')?meaning(l,NOW()).split(' · ')[0]:l.text;
   const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Memento//alpha//EN','BEGIN:VEVENT','UID:memento-'+l.id+'-'+(+l.ts)+'@memento','DTSTAMP:'+icsDate(new Date()),'DTSTART:'+icsDate(d),'DTEND:'+icsDate(e),'SUMMARY:'+title.replace(/[,;\\]/g,' '),'DESCRIPTION:From Memento: '+l.text.replace(/[,;\\]/g,' '),'BEGIN:VALARM','TRIGGER:-PT0M','ACTION:DISPLAY','DESCRIPTION:'+title.replace(/[,;\\]/g,' '),'END:VALARM','END:VEVENT','END:VCALENDAR'].join('\r\n');
   const url=URL.createObjectURL(new Blob([ics],{type:'text/calendar'}));const a=document.createElement('a');a.href=url;a.download='memento-reminder.ics';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);toast('Opening Calendar')}
@@ -571,6 +578,7 @@ document.querySelector('.app').addEventListener('click',e=>{
   if(t.dataset.o){const o=t.dataset.o;if(o==='salary'){askSalary();return}if(o==='export'){exportText();return}if(o==='help'){help();return}({coming:ovComing,money:ovMoney,threads:ovThreads,people:ovPeople})[o]();return}
   if(t.id==='back'){closeOv();return}
   if(t.tagName==='A')return;
+  if(t.dataset.when){e.stopPropagation();const l=S.lines.find(x=>x.id==t.dataset.when);if(l)askWhen(l);return}
   if(t.dataset.cal){e.stopPropagation();const l=S.lines.find(x=>x.id==t.dataset.cal);if(l)addToCalendar(l);return}
   if(t.dataset.cn){e.stopPropagation();const l=S.lines.find(x=>x.id==t.dataset.cn);const a=t.dataset.a;S.acted['cn'+t.dataset.cn]=a;const c=l&&S.lines.find(x=>x.id===l.conn);
     if(c&&a==='Done')c.done=true;if(c&&a==='Not now')S.snooze[c.id]=+NOW()+30*864e5;save();render();return}

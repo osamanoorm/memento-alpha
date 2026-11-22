@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.3.1 · 22 Nov 2026
+- When?: undated to-dos ("pay Bluevera bill") get a When? button with Tonight, Tomorrow morning, This weekend and Next week. Picking one brings it back on that day and adds Remind me for a phone alert. Your words stay as written.
+
 ## 0.3.0 · 22 Nov 2026
 Connections, and ready for the research circle.
 - Connections: write "dinner sat?" and an older open line like "try that new sushi place" comes back as a card under it (Done / Not now). Links by topic (eating out, watching, reading, car, learning, writing, gifts, trips), not just shared words. Shows in the preview while typing. At most 5 a day; done lines never come back; "Not now" quiets a line for a month.
