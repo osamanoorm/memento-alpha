@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.3.3 (24 Nov 2026)
+- Fixed: on phones there was no way to start a new line (no Shift key). On touch screens, Return now starts a new line and ↑ adds. On a computer, Enter still adds and Shift+Enter starts a new line.
+
 ## 0.3.2 (24 Nov 2026)
 Phrases from the first micro interviews.
 - Fixed: "2 hours we write essay" was read as Rs 2. Numbers followed by hours, days, weeks, times, pages, people and similar are no longer money.
