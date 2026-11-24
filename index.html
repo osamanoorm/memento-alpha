@@ -45,7 +45,7 @@ html,body{margin:0;height:100%;background:#fff;color:var(--ink);font:16px/1.45 -
 .live{min-height:18px;font:12px/1.4 ui-monospace,Menlo,monospace;color:var(--mute);padding:2px 4px 6px}
 .live b{color:var(--ink);font-weight:600}
 .inrow{display:flex;gap:8px}
-#in{flex:1;border:1px solid var(--line);border-radius:14px;padding:11px 12px;font:inherit;outline:none}
+#in{resize:none;max-height:40vh;overflow-y:auto;line-height:1.35;flex:1;border:1px solid var(--line);border-radius:14px;padding:11px 12px;font:inherit;outline:none}
 #in:focus{border-color:#aaa}
 .send{border:0;background:var(--ink);color:#fff;border-radius:14px;padding:0 15px;font:inherit;cursor:pointer}
 .ov{position:absolute;inset:0;background:#fff;display:none;flex-direction:column;z-index:5;padding-top:env(safe-area-inset-top)}
@@ -78,13 +78,13 @@ select{font:inherit;font-size:14px;padding:6px;border-radius:8px;border:1px soli
   <div class="top"><div class="brand">Memento<span class="sync" id="ver"></span></div><button class="menu" id="menuBtn" aria-label="Menu">☰</button></div>
   <div class="stream" id="stream"></div>
   <div class="composer"><div class="live" id="live"></div>
-    <div class="inrow"><input id="in" placeholder="Write anything..." autocomplete="off" autocapitalize="sentences" enterkeyhint="done"><button class="send" id="send" aria-label="Add">↑</button></div></div>
+    <div class="inrow"><textarea id="in" rows="1" placeholder="Write anything..." autocomplete="off" autocapitalize="sentences" enterkeyhint="done"></textarea><button class="send" id="send" aria-label="Add">↑</button></div></div>
   <div class="ov" id="ov"><div class="hd"><span class="vb" id="back">Back</span><b id="ovt"></b></div><div class="bd" id="ovb"></div></div>
   <div class="sheetbg" id="sheetbg"><div class="sheet" id="sheet"></div></div>
   <div class="toast" id="toast"></div>
 </div>
 <script>
-const VERSION='0.3.1';
+const VERSION='0.3.2';
 // ---------- basics ----------
 const WDA={sun:0,sunday:0,mon:1,monday:1,tue:2,tues:2,tuesday:2,wed:3,wednesday:3,thu:4,thur:4,thurs:4,thursday:4,fri:5,friday:5,sat:6,saturday:6,jumma:5,juma:5,jumeraat:4,itwaar:0,itwar:0,mangal:2,budh:3};
 const MON={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,sept:8,oct:9,nov:10,dec:11};
@@ -103,7 +103,7 @@ const num=(s,k)=>parseFloat(String(s).replace(/,/g,''))*(k?1000:1);
 const reEsc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 const NOTP=new Set('hostel team friends family colleagues girls boys kids client clients office class classmates everyone guys squad sir madam miss mr mrs dr the'.split(' '));
 const STOP=new Set('with this that have from about tonight today tomorrow morning evening noon people persons paid sent gave brings bring will need needs remember next week weeks month months also just some more each into your them they their then than when what where which while should could would must call text email mail send pick book check order cancel review reply return renew prepare finish submit clean schedule remind much total spent spend owes owe dont forget have apply register collect visit file udhaar udhar bags invoice due bill hours rate'.split(' '));
-const TASKV=/^(call|text|email|mail|buy|get|pick|book|pay|send|remind|ask|renew|fix|clean|submit|finish|return|cancel|schedule|order|check|review|prepare|reply|follow up|apply|register|collect|visit|file|todo|to do)\b/i;
+const TASKV=/^(call|text|email|mail|buy|get|pick|book|pay|send|remind|ask|renew|fix|clean|submit|finish|return|cancel|schedule|order|check|review|prepare|reply|follow up|apply|register|collect|visit|file|todo|to do|message|make|figure out|print|empty|pack|post|download)\b/i;
 const CATS={food:/\b(burger|pizza|lunch|dinner|breakfast|coffee|tea|chai|milkshake|biryani|food|restaurant|groceries|grocery|kfc|mcdonald|snacks|cake|shawarma)\b/,transport:/\b(fuel|petrol|uber|careem|indrive|taxi|rickshaw|bus|train|flight|parking|toll)\b/,bills:/\b(electricity|gas bill|bill|internet|rent|water|phone|mobile|subscription|netflix|spotify|figma)\b/,home:/\b(maid|uniform|school|fees|medicine|pharmacy|doctor|pediatrician)\b/,stay:/\b(hotel|airbnb|stay)\b/};
 const catOf=t=>{for(const k in CATS)if(CATS[k].test(t))return k;return null};
 const RATES={usd:1,myr:.225,pkr:.00357,eur:1.07,gbp:1.26,aed:.2723,sar:.2667,inr:.0118};
@@ -140,7 +140,7 @@ function namesIn(text){
   const out=new Set();const t=text.replace(/'s\b/g,''),w=t.split(/\s+/);
   const ws=w.filter(x=>/[a-z]/i.test(x));if(ws.length>=2&&ws.every(x=>/^[A-Z0-9]/.test(x))&&!/\d/.test(t))return [];
   w.forEach((x,i)=>{const c=x.replace(/[^A-Za-z]/g,'');if(c.length<3)return;const lc=c.toLowerCase();
-    if(/^[A-Z][a-z]+$/.test(c)&&!(lc in WDA)&&MON[lc.slice(0,3)]===undefined&&!CATS.food.test(lc)&&(i>0||/^(paid|sent|gave|brings|will|to|should|needs|returned|owes)$/i.test(w[1]||'')||/udhaa?r/i.test(t)))out.add(c)});
+    if(/^[A-Z][a-z]+$/.test(c)&&!(lc in WDA)&&!/^(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december)$/.test(lc)&&!CATS.food.test(lc)&&(i>0||/^(paid|sent|gave|brings|will|to|should|needs|returned|owes)$/i.test(w[1]||'')||/udhaa?r/i.test(t)))out.add(c)});
   let m=t.match(/\bwith ([a-z]+)\b/i);if(m)out.add(cap(m[1].toLowerCase()));
   return [...out].filter(x=>!NOTP.has(x.toLowerCase()));
 }
@@ -198,6 +198,7 @@ function parseCore(text,base,prevVal){
   const am=st.match(/(?<![a-z])(?:rs\.?\s?|pkr\s?|\$\s?)?(\d[\d,]*(?:\.\d+)?)(k)?\b(?!\s?(?:people|persons|pax|bags?|kg|pcs|pieces))/i);
   let amount=am?num(am[1],am[2]):null;
   if(/^\s*[+\-*x×\/÷]\s*\d/i.test(st)||/\b\d+(?:\.\d+)?\s*(usd|pkr|myr|eur|gbp|aed|sar|inr)\s+(to|in)\s+[a-z]{3}\b/.test(lower)||/\b(salary|allowance|income|bonus|received|got paid)\b/.test(lower)){f.type='note';return f}
+  if(am&&/^\s*(hours?|hrs?|mins?|minutes?|days?|weeks?|months?|years?|times|pages|slides|people|persons|%)\b/i.test(st.slice(st.indexOf(am[0])+am[0].length)))amount=null;
   if(am&&(/^(19|20)\d\d$/.test(am[1])||/\b(room|flat|house|apt|apartment|gate|block|street|st|no|plot|sector|phase|floor|seat|gen|season|part|vol|chapter|episode|ep|iphone|ps)\.?\s*#?\s*$/i.test(st.slice(0,st.indexOf(am[0])))))amount=null;
   if(/\b(udhaa?r|owes me|lent|loan to|on credit|baqi)\b/.test(lower)&&amount!=null){const all=st.match(/\d[\d,]*(?:\.\d+)?k?/g)||[];f.type='credit';f.when=when;f.amount=num(all[all.length-1].replace(/k/i,''),/k/i.test(all[all.length-1]));f.person=f.people[0]||cap(lower.split(' ')[0]);if(!f.people.includes(f.person))f.people.unshift(f.person);return f}
   if(/\binvoice\b/.test(lower)&&amount!=null){f.type='credit';f.when=f.dt?fD(f.dt.date):when;f.amount=amount;const pre=text.split(/\binvoice\b/i)[0].trim();f.person=pre?pre.split(/\s+/).map(w=>cap(w.toLowerCase())).join(' '):(f.people[0]||'Client');f.people=[f.person];return f}
@@ -471,6 +472,20 @@ function add(text){text=text.trim();if(!text)return;const ts=NOW();const l=build
   if(l.f.trigger==='salary'&&!S.rhythms.salaryDay)setTimeout(askSalary,350);
 }
 
+const LISTHEAD=/^(to ?dos?|things( to do)?|list|tasks|packing|groceries|shopping|payments)\b/i;
+function addBlock(text){
+  const raw=text.split(/\n/).map(x=>x.replace(/^\s*(?:[-•*·☐▢□✓✔]|\[\s?\]|\d+[.)])\s*/,'').trim()).filter(Boolean);
+  if(raw.length<2){add(text);return}
+  let head=null;if(/:$/.test(raw[0])||(LISTHEAD.test(raw[0])&&raw[0].split(/\s+/).length<=5)){head=raw.shift().replace(/:$/,'')}
+  const hf=head?parse(head,NOW()):null;
+  if(head)add(head);const hl=head?S.lines[S.lines.length-1]:null;if(hl&&hl.type==='note')hl.f.listHead=true;
+  for(const t of raw){add(t);const l=S.lines[S.lines.length-1];
+    if(l.type==='note'&&!l.f.kind&&!l.f.secret){l.type='task';l.f.type='task'}
+    if(head)l.f.list=head;
+    if(hf&&hf.dt&&l.type==='task'&&!l.f.dt)l.f.dt=hf.dt}
+  save();render();
+}
+
 // ---------- render ----------
 function render(){
   const now=NOW();
@@ -561,13 +576,15 @@ function help(){openOv('How to use Memento',`
 // ---------- typing ----------
 const inp=document.getElementById('in');
 inp.addEventListener('input',()=>{const v=inp.value.trim(),lv=document.getElementById('live');if(!v){lv.innerHTML='';return}
+  {const n=v.split(/\n/).filter(x=>x.trim()).length;if(n>1){lv.innerHTML='<b>List · '+n+' lines</b>';return}}
   const l=build(v,NOW());uid--;if(l.type==='ask')l.answer=answer(v,NOW());
   let j='';if(!['ask','live','secret','note','message','hold','credit','debt','invoice','payment','signal'].includes(l.type)){const kw=keywords(v);const t=Object.values(S.threads).find(t=>{const f=tLines(t.id)[0];return f&&[...keywords(f.text)].some(k=>kw.has(k))});if(t)j=' · with '+t.name}
   let r='';if(!NOCONN.includes(l.type)){const c=findConn(v,NOW(),-1);if(c)r=' · ↳ '+(c.text.length>34?c.text.slice(0,32)+'…':c.text)}
   if(!r&&!j&&!['ask','secret'].includes(l.type)){const x=related(v,-1);if(x)r=' · ↳ '+(x.text.length>34?x.text.slice(0,32)+'…':x.text)}
   const mn=meaning(l,NOW());lv.innerHTML=(mn?'<b>'+esc(mn)+'</b>':`<span>${TL[l.type]}</span>`)+esc(j+r)});
-const submit=()=>{add(inp.value);inp.value='';document.getElementById('live').innerHTML=''};
-inp.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();submit()}});
+const grow=()=>{inp.style.height='auto';inp.style.height=inp.scrollHeight+'px'};inp.addEventListener('input',grow);
+const submit=()=>{addBlock(inp.value);inp.value='';grow();document.getElementById('live').innerHTML=''};
+inp.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();submit()}});
 document.getElementById('send').onclick=()=>{submit();inp.focus()};
 document.getElementById('menuBtn').onclick=openMenu;
 

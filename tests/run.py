@@ -26,6 +26,14 @@ with sync_playwright() as p:
     pg.evaluate("localStorage.clear();S={lines:[],threads:{},acted:{},pinned:{},rhythms:{},snooze:{}};uid=1")
     r=pg.evaluate("()=>{add('try that new sushi place');S.lines[0].ts=new Date(+S.lines[0].ts-864e5);add('dinner sat?');S.acted['cn'+S.lines[1].id]='Done';S.lines[0].done=true;S.lines[1].ts=new Date(+S.lines[1].ts-864e5);add('lunch out tomorrow');return !!S.lines[2].conn}")
     if r: fails+=1;print('FAIL done line came back')
+    # list blocks: each line of a multi-line block becomes a to-do; header deadline inherited
+    pg.evaluate("localStorage.clear();S={lines:[],threads:{},acted:{},pinned:{},rhythms:{},snooze:{}};uid=1")
+    r=pg.evaluate("()=>{addBlock('things\\nmake excel\\nkristina slot\\nslides\\n2 hours we write essay');return S.lines.map(l=>l.type)}")
+    if r!=['note','task','task','task','task']: fails+=1;print('FAIL list block',r)
+    pg.evaluate("localStorage.clear();S={lines:[],threads:{},acted:{},pinned:{},rhythms:{},snooze:{}};uid=1")
+    r=pg.evaluate("()=>{addBlock('Payments before 10 march:\\n- electricity\\n- maid');return S.lines.slice(1).map(l=>!!l.f.dt)}")
+    if r!=[True,True]: fails+=1;print('FAIL header deadline',r)
+    cases=cases+[0]*2
     cases=cases+[0]*7
     if errs: fails+=1;print('PAGE ERRORS',errs)
     b.close()

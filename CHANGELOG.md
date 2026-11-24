@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.2 (24 Nov 2026)
+Phrases from the first micro interviews.
+- Fixed: "2 hours we write essay" was read as Rs 2. Numbers followed by hours, days, weeks, times, pages, people and similar are no longer money.
+- More lines read as to-dos: message, make, figure out, print, empty, pack, post, download ("figure out money thing", "message Mariam", "pack").
+- Lists: paste or write several lines (Shift+Enter for a new line) and each line becomes its own entry. Plain lines in a list become undated to-dos ("slides", "kristina slot"). A first line like "things", "to do" or anything ending in ":" is the list's title, and a deadline in the title ("Payments before 10 march:") carries to every item.
+- Fixed: names starting like a month ("Mariam", "Junaid", "Augustine") were dropped as people.
+- 11 new test phrases from interviews, plus list checks (72 checks).
+
 ## 0.3.1 · 22 Nov 2026
 - When?: undated to-dos ("pay Bluevera bill") get a When? button with Tonight, Tomorrow morning, This weekend and Next week. Picking one brings it back on that day and adds Remind me for a phone alert. Your words stay as written.
 
