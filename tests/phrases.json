@@ -339,5 +339,29 @@
  {
   "in": "Bilal ne 2000 wapis kar diye",
   "type": "payment"
+ },
+ {
+  "in": "salary aayi",
+  "type": "signal"
+ },
+ {
+  "in": "gas bill bharna hai",
+  "type": "task"
+ },
+ {
+  "in": "Eid ke liye kapray lene hain",
+  "type": "task"
+ },
+ {
+  "in": "committee 10000 har mahine",
+  "type": "note"
+ },
+ {
+  "in": "umrah ke liye 20000 bachaye",
+  "type": "note"
+ },
+ {
+  "in": "Ali ko call karni hai",
+  "type": "task"
  }
 ]

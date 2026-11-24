@@ -84,7 +84,7 @@ select{font:inherit;font-size:14px;padding:6px;border-radius:8px;border:1px soli
   <div class="toast" id="toast"></div>
 </div>
 <script>
-const VERSION='0.3.6';
+const VERSION='0.3.7';
 // ---------- basics ----------
 const WDA={sun:0,sunday:0,mon:1,monday:1,tue:2,tues:2,tuesday:2,wed:3,wednesday:3,thu:4,thur:4,thurs:4,thursday:4,fri:5,friday:5,sat:6,saturday:6,jumma:5,juma:5,jumeraat:4,itwaar:0,itwar:0,mangal:2,budh:3};
 const MON={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,sept:8,oct:9,nov:10,dec:11};
@@ -167,8 +167,8 @@ function parseCore(text,base,prevVal){
   f.dt=parseDT(lower,base);
   let st=lower;if(f.dt)f.dt.tk.forEach(t=>st=st.replace(t,' '));
   f.people=namesIn(text);
-  if(/\b(salary|tankhwah|tankhwa)\b/.test(lower)&&/\b(next|on|after|when|pe|par)\b/.test(lower)&&!/\b(came|received|credited|aya|aagayi|aa gayi|arrived)\b/.test(lower))f.trigger='salary';
-  if(/\b(salary|tankhwah|tankhwa)\s+(came|received|credited|aya|aagayi|aa gayi|arrived)\b|\bgot paid\b/.test(lower)){f.type='signal';return f}
+  if(/\b(salary|tankhwah|tankhwa)\b/.test(lower)&&/\b(next|on|after|when|pe|par)\b/.test(lower)&&!/\b(came|received|credited|aya|aayi|ayi|aai|aagayi|aa gayi|aa gai|arrived)\b/.test(lower))f.trigger='salary';
+  if(/\b(salary|tankhwah|tankhwa)\s+(came|received|credited|aya|aayi|ayi|aai|aagayi|aa gayi|aa gai|arrived)\b|\bgot paid\b/.test(lower)){f.type='signal';return f}
   if((m=lower.match(/\b(?:send|transfer|move)\s+(?:rs\.?\s?)?(\d[\d,]*(?:\.\d+)?)(k)?\s+from\s+([a-z]+)\s+to\s+([a-z]+)/))){f.type='transfer';f.amount=num(m[1],m[2]);f.from=m[3].toUpperCase().length<=4?m[3].toUpperCase():cap(m[3]);f.to=m[4].toUpperCase().length<=4?m[4].toUpperCase():cap(m[4]);return f}
   if(/^(how much|how many|who owes|what do i owe|what's coming|whats coming|what is coming|total)\b/.test(lower)||/^\?/.test(lower)){f.type='ask';return f}
   if((m=text.match(/\bsecurity\s+(?:pic|picture|image|question|answer|word)s?\b\s*(?:is|:|-)?\s*(.+)$/i))&&m[1].trim()){f.type='secret';f.people=[];f.secret=[m[1].trim()];f.label=text.replace(m[1],'').trim();return f}
@@ -211,9 +211,10 @@ function parseCore(text,base,prevVal){
   
   const as=text.match(/^([A-Za-z][a-z]+)\s+(brings|will bring|to bring|will|should|needs to)\b/i);
   f.assignee=as&&!/^(i|we|you)$/i.test(as[1])?cap(as[1].toLowerCase()):null;
-  if((f.dt&&/\b(due|deadline|submission)\b/.test(lower))||TASKV.test(lower)||/\b(need to|remember to|don'?t forget|have to)\b/.test(lower)||f.assignee){f.type='task';return f}
+  if((f.dt&&/\b(due|deadline|submission)\b/.test(lower))||TASKV.test(lower)||/\b(need to|remember to|don'?t forget|have to|yaad se)\b/.test(lower)||/\b(karna|karni|karne|lana|lani|lane|lena|leni|lene|dena|deni|dene|bharna|bharni|bharne|jama karna|bhejna|bhejni|banana|banani)\s*(hai|hain|he|h)?\s*[.!]*$/.test(lower)||f.assignee){f.type='task';return f}
   if(/^(mon|tues|wednes|thurs|fri|satur|sun)day\s*:/i.test(text)&&!(f.dt&&f.dt.hasTime)){f.type='note';f.kind='roster';f.dt=null;return f}
   if(f.dt){f.type='event';if(amount!=null)f.amount=amount;f.film=/\b(avengers|movie|film|cinema|premiere|screening|marvel|batman|dune|bond)\b/.test(lower);return f}
+  if(amount!=null&&/\b(committee|commitee|bc|qist|bachaye|bachaya|bachat|saved|savings?|fund|pot)\b/.test(lower)&&!/\bnikli\b/.test(lower)){if(f.dt){f.type='task';f.amount=amount;return f}f.type='note';f.kind='pot';f.amount=amount;return f}
   if(amount!=null){f.type='money';f.amount=amount;f.cat=catOf(lower);const tm=lower.match(/^(.*?)\s*(?:total|=)\s/);if(tm&&tm[1].includes(','))f.items=tm[1].split(',').map(x=>x.trim()).filter(Boolean);return f}
   f.type='note';return f;
 }

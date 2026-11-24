@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.7 (25 Nov 2026)
+Roman Urdu track started (tests/roman-urdu.json: 45 phrases; 29 → 39 read sensibly).
+- Roman Urdu to-dos: lines ending in karna/karni hai, lana hai, lene hain, bharna hai, bhejna hai and "yaad se" are to-dos ("gas bill bharna hai", "Eid ke liye kapray lene hain").
+- "salary aayi" and other spellings now mark salary day.
+- Savings and committees are no longer counted as spending ("umrah ke liye 20000 bachaye", "committee 10000 har mahine"). "committee nikli" still counts as money received.
+- 6 new test phrases (91 checks). Synthetic set: 78 → 82 of 99.
+
 ## 0.3.6 (25 Nov 2026)
 From a stress test of 99 synthetic phrases (tests/synthetic.json; made up, not evidence).
 - Fixed (trust): a password written as "Netflix: email / Pass1234" was shown as a link with the password visible. Now hidden as a secret.

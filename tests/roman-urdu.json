@@ -1,0 +1,15 @@
+{"note":"Roman Urdu test set. Phrases mix real interview lines and Claude-written realistic lines (marked s). Target: 90%+ before the native build.",
+"cases":[
+["Ali ko 5000 diye","credit"],["Ali ko 5000 de diye","credit"],["Ali ko 5k diya","credit"],["Bilal ko 2000 udhaar diye","credit"],
+["Ali se 3000 liye","debt"],["Ali se 3k le liye","debt"],["Hamza se 1500 udhaar liya","debt"],
+["Imran ne 2000 diye","payment"],["Imran ne 2000 wapis kiye","payment"],["Bilal ne 2000 wapis kar diye","payment"],["Sara ne paise wapas kar diye","payment"],
+["bhai ko 1500 dene hain","debt"],["Ali ko 2000 dena hai","debt"],["Raza se 4000 lene hain","credit"],["Saad se 500 lena hai","credit"],
+["khala ne 300 dollars bheje","note"],["Ammi ko 10k bheje","money"],
+["kal dentist 4 baje","event"],["parson PTM 11am","event"],["jumma ko masjid meeting","event"],["aaj raat 9 baje call","event"],["agle hafte doctor","event"],
+["bijli ka bill bharna hai","task"],["gas bill bharna hai","task"],["Eid ke liye kapray lene hain","task"],["doodh lana hai","task"],["Ali ko call karni hai","task"],["yaad se medicine lena","task"],["bachon ko school se lena hai","task"],
+["salary aayi","signal"],["salary aa gayi","signal"],["salary pe Imran ko 20k dene hain","task"],
+["committee 10000 har mahine","note"],["BC ki qist 5000 1st ko","task"],["committee nikli 120000","money"],
+["umrah ke liye 20000 bachaye","note"],["bonus aaya 50k","money"],
+["Ammi kurta size M","note"],["khala hisab","note"],["dua for travel","note"],["quran 1 para daily","note"],
+["doodh wala 3200","money"],["dhobi 800","money"],["sabzi 600","money"],["rickshaw 300","money"]
+]}
