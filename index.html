@@ -84,7 +84,7 @@ select{font:inherit;font-size:14px;padding:6px;border-radius:8px;border:1px soli
   <div class="toast" id="toast"></div>
 </div>
 <script>
-const VERSION='0.3.4';
+const VERSION='0.3.5';
 // ---------- basics ----------
 const WDA={sun:0,sunday:0,mon:1,monday:1,tue:2,tues:2,tuesday:2,wed:3,wednesday:3,thu:4,thur:4,thurs:4,thursday:4,fri:5,friday:5,sat:6,saturday:6,jumma:5,juma:5,jumeraat:4,itwaar:0,itwar:0,mangal:2,budh:3};
 const MON={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,sept:8,oct:9,nov:10,dec:11};
@@ -142,6 +142,7 @@ function namesIn(text){
   w.forEach((x,i)=>{const c=x.replace(/[^A-Za-z]/g,'');if(c.length<3)return;const lc=c.toLowerCase();
     if(/^[A-Z][a-z]+$/.test(c)&&!(lc in WDA)&&!/^(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december)$/.test(lc)&&!CATS.food.test(lc)&&(i>0||/^(paid|sent|gave|brings|will|to|should|needs|returned|owes)$/i.test(w[1]||'')||/udhaa?r/i.test(t)))out.add(c)});
   let m=t.match(/\bwith ([a-z]+)\b/i);if(m)out.add(cap(m[1].toLowerCase()));
+  (t.toLowerCase().match(/\b(khala|khalu|ammi|ami|abbu|abu|nani|nana|dadi|dada|phuppo|phupho|mamu|mamoo|chacha|chachi|baji|aapi|apa)\b/g)||[]).forEach(r=>out.add(cap(r)));
   return [...out].filter(x=>!NOTP.has(x.toLowerCase()));
 }
 function keywords(text){
@@ -211,6 +212,7 @@ function parseCore(text,base,prevVal){
   const as=text.match(/^([A-Za-z][a-z]+)\s+(brings|will bring|to bring|will|should|needs to)\b/i);
   f.assignee=as&&!/^(i|we|you)$/i.test(as[1])?cap(as[1].toLowerCase()):null;
   if((f.dt&&/\b(due|deadline|submission)\b/.test(lower))||TASKV.test(lower)||/\b(need to|remember to|don'?t forget|have to)\b/.test(lower)||f.assignee){f.type='task';return f}
+  if(/^(mon|tues|wednes|thurs|fri|satur|sun)day\s*:/i.test(text)&&!(f.dt&&f.dt.hasTime)){f.type='note';f.kind='roster';f.dt=null;return f}
   if(f.dt){f.type='event';if(amount!=null)f.amount=amount;f.film=/\b(avengers|movie|film|cinema|premiere|screening|marvel|batman|dune|bond)\b/.test(lower);return f}
   if(amount!=null){f.type='money';f.amount=amount;f.cat=catOf(lower);const tm=lower.match(/^(.*?)\s*(?:total|=)\s/);if(tm&&tm[1].includes(','))f.items=tm[1].split(',').map(x=>x.trim()).filter(Boolean);return f}
   f.type='note';return f;

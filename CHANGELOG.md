@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.5 (25 Nov 2026)
+Phrases from Safa's and Minha's interviews.
+- Family words are people: khala, ammi, abbu, nani, dadi, phuppo, mamu, chacha, baji and others ("bought dress for khala 8500", "Ammi kurta size M").
+- Fixed: duty rosters like "Monday: Simran & Carol" were read as an event this Monday. A day followed by ":" with no time is now kept as a note.
+- 6 new test phrases (78 checks).
+- Known gaps, not fixed: past dates for memories ("Inaaya first steps 12 March") are read as a future event; "khala sent 200 dollars" is kept as a note because it's in dollars (by design: currencies are never mixed into rupee balances).
+
 ## 0.3.4 (24 Nov 2026)
 - Fixed: the iPhone keyboard showed "done" instead of a return key, so there was still no way to start a new line. The keyboard now shows its normal return key.
 

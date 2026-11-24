@@ -287,5 +287,29 @@
  {
   "in": "call Mariam tomorrow",
   "type": "task"
+ },
+ {
+  "in": "Monday: Simran & Carol",
+  "type": "note"
+ },
+ {
+  "in": "bought dress for khala 8500",
+  "type": "money"
+ },
+ {
+  "in": "netflix email x@y.com password Abc123",
+  "type": "secret"
+ },
+ {
+  "in": "paid cake vendor 4500",
+  "type": "money"
+ },
+ {
+  "in": "Ammi kurta size M",
+  "type": "note"
+ },
+ {
+  "in": "BAHL account title",
+  "type": "note"
  }
 ]
