@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.3.4 (24 Nov 2026)
+- Fixed: the iPhone keyboard showed "done" instead of a return key, so there was still no way to start a new line. The keyboard now shows its normal return key.
+
 ## 0.3.3 (24 Nov 2026)
 - Fixed: on phones there was no way to start a new line (no Shift key). On touch screens, Return now starts a new line and ↑ adds. On a computer, Enter still adds and Shift+Enter starts a new line.
 
