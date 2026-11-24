@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.6 (25 Nov 2026)
+From a stress test of 99 synthetic phrases (tests/synthetic.json; made up, not evidence).
+- Fixed (trust): a password written as "Netflix: email / Pass1234" was shown as a link with the password visible. Now hidden as a secret.
+- Fixed (wrong numbers): sizes, pressure, para, percentages and quantities were read as rupees ("shoe size 9", "tyre pressure 32", "50% off", "2 dozen bananas", "1 para").
+- Roman Urdu: "wapis kar diye" now records a payment.
+- 7 new test phrases (85 checks). Synthetic score 71 → 78 of 99; remaining gaps listed in claude/memento-synthetic-and-public.md.
+
 ## 0.3.5 (25 Nov 2026)
 Phrases from Safa's and Minha's interviews.
 - Family words are people: khala, ammi, abbu, nani, dadi, phuppo, mamu, chacha, baji and others ("bought dress for khala 8500", "Ammi kurta size M").

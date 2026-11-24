@@ -311,5 +311,33 @@
  {
   "in": "BAHL account title",
   "type": "note"
+ },
+ {
+  "in": "Netflix: sara@gmail.com / Pass1234",
+  "type": "secret"
+ },
+ {
+  "in": "Abbu shoe size 9",
+  "type": "note"
+ },
+ {
+  "in": "2 dozen bananas",
+  "type": "note"
+ },
+ {
+  "in": "50% off at Khaadi",
+  "type": "note"
+ },
+ {
+  "in": "quran 1 para daily",
+  "type": "note"
+ },
+ {
+  "in": "tyre pressure 32",
+  "type": "note"
+ },
+ {
+  "in": "Bilal ne 2000 wapis kar diye",
+  "type": "payment"
  }
 ]

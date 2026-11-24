@@ -84,7 +84,7 @@ select{font:inherit;font-size:14px;padding:6px;border-radius:8px;border:1px soli
   <div class="toast" id="toast"></div>
 </div>
 <script>
-const VERSION='0.3.5';
+const VERSION='0.3.6';
 // ---------- basics ----------
 const WDA={sun:0,sunday:0,mon:1,monday:1,tue:2,tues:2,tuesday:2,wed:3,wednesday:3,thu:4,thur:4,thurs:4,thursday:4,fri:5,friday:5,sat:6,saturday:6,jumma:5,juma:5,jumeraat:4,itwaar:0,itwar:0,mangal:2,budh:3};
 const MON={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,sept:8,oct:9,nov:10,dec:11};
@@ -160,7 +160,7 @@ function parse(text,base,prevVal){
   if(c&&f.amount!=null&&['money','credit','debt','payment','task','event'].includes(f.type)){f.cur=c;if(['credit','debt','payment'].includes(f.type)){f.type='note';f.curNote=true}}
   return f;
 }
-const UVERB=/^([a-z]+)\s+(ko|se|ne)\s+(?:rs\.?\s?)?(\d[\d,]*(?:\.\d+)?)(k)?\s*(?:rs\s+|rupees?\s+|advance\s+|udhaa?r\s+|wapas\s+|wapis\s+)*(de diye|de diya|le liye|le liya|wapas kiye|wapas kiya|wapis kiye|return kiye|dene hain|dena hai|lene hain|lena hai|diye|diya|di|liye|liya|li|dene|lene|bheje|bheja|lautaye)\b/i;
+const UVERB=/^([a-z]+)\s+(ko|se|ne)\s+(?:rs\.?\s?)?(\d[\d,]*(?:\.\d+)?)(k)?\s*(?:rs\s+|rupees?\s+|advance\s+|udhaa?r\s+|wapas\s+|wapis\s+)*(de diye|de diya|le liye|le liya|wapas kar diye|wapis kar diye|wapas kar diya|wapis kar diya|kar diye|kar diya|wapas kiye|wapas kiya|wapis kiye|return kiye|dene hain|dena hai|lene hain|lena hai|diye|diya|di|liye|liya|li|dene|lene|bheje|bheja|lautaye)\b/i;
 function parseCore(text,base,prevVal){
   const lower=text.toLowerCase().trim();const f={};let m;
   const br=text.match(/\(([^)]*)\)\s*$/);const when=br?br[1].trim():null;
@@ -172,7 +172,7 @@ function parseCore(text,base,prevVal){
   if((m=lower.match(/\b(?:send|transfer|move)\s+(?:rs\.?\s?)?(\d[\d,]*(?:\.\d+)?)(k)?\s+from\s+([a-z]+)\s+to\s+([a-z]+)/))){f.type='transfer';f.amount=num(m[1],m[2]);f.from=m[3].toUpperCase().length<=4?m[3].toUpperCase():cap(m[3]);f.to=m[4].toUpperCase().length<=4?m[4].toUpperCase():cap(m[4]);return f}
   if(/^(how much|how many|who owes|what do i owe|what's coming|whats coming|what is coming|total)\b/.test(lower)||/^\?/.test(lower)){f.type='ask';return f}
   if((m=text.match(/\bsecurity\s+(?:pic|picture|image|question|answer|word)s?\b\s*(?:is|:|-)?\s*(.+)$/i))&&m[1].trim()){f.type='secret';f.people=[];f.secret=[m[1].trim()];f.label=text.replace(m[1],'').trim();return f}
-  if((m=text.match(/\b(password|passcode|pwd|pin|otp|login|cvv)\b/i))||(/\S+@\S+\.\S+\s+\S{4,}/.test(text)&&!/\b(meet|call|send)\b/i.test(lower))){
+  if((m=text.match(/\b(password|passcode|pwd|pin|otp|login|cvv)\b/i))||(/\S+@\S+\.\S+\s*[\/:|,-]?\s*\S{4,}/.test(text)&&!/\b(meet|call|send)\b/i.test(lower))){
     const em=text.match(/\S+@\S+\.\S+/);const toks=text.split(/\s+/).filter(x=>x.length>=4&&!/^(password|passcode|pass|pwd|pin|otp|login|cvv)$/i.test(x)&&x!==(em&&em[0])&&(/\d/.test(x)||/[^a-z]/i.test(x)||x.length>=6)&&!/^[a-z]+$/i.test(x));
     if(toks.length){f.type='secret';f.people=[];f.secret=toks;f.label=text.replace(/\S+@\S+\.\S+/,'').split(/\s+/).filter(x=>!toks.includes(x)).join(' ').trim();f.email=em&&em[0];return f}
   }
@@ -199,8 +199,8 @@ function parseCore(text,base,prevVal){
   const am=st.match(/(?<![a-z])(?:rs\.?\s?|pkr\s?|\$\s?)?(\d[\d,]*(?:\.\d+)?)(k)?\b(?!\s?(?:people|persons|pax|bags?|kg|pcs|pieces))/i);
   let amount=am?num(am[1],am[2]):null;
   if(/^\s*[+\-*x×\/÷]\s*\d/i.test(st)||/\b\d+(?:\.\d+)?\s*(usd|pkr|myr|eur|gbp|aed|sar|inr)\s+(to|in)\s+[a-z]{3}\b/.test(lower)||/\b(salary|allowance|income|bonus|received|got paid)\b/.test(lower)){f.type='note';return f}
-  if(am&&/^\s*(hours?|hrs?|mins?|minutes?|days?|weeks?|months?|years?|times|pages|slides|people|persons|%)\b/i.test(st.slice(st.indexOf(am[0])+am[0].length)))amount=null;
-  if(am&&(/^(19|20)\d\d$/.test(am[1])||/\b(room|flat|house|apt|apartment|gate|block|street|st|no|plot|sector|phase|floor|seat|gen|season|part|vol|chapter|episode|ep|iphone|ps)\.?\s*#?\s*$/i.test(st.slice(0,st.indexOf(am[0])))))amount=null;
+  if(am&&/^\s*(?:%|(?:hours?|hrs?|mins?|minutes?|days?|weeks?|months?|years?|times|pages|slides|people|persons|dozen|kg|kgs|gm|grams?|liters?|litres?|ltr|ml|pcs|pieces|para|psi|x)\b)/i.test(st.slice(st.indexOf(am[0])+am[0].length)))amount=null;
+  if(am&&(/^(19|20)\d\d$/.test(am[1])||/\b(room|flat|house|apt|apartment|gate|block|street|st|no|plot|sector|phase|floor|seat|gen|season|part|vol|chapter|episode|ep|iphone|ps|size|pressure|para|level|grade|class|page|no\.)\.?\s*#?\s*$/i.test(st.slice(0,st.indexOf(am[0])))))amount=null;
   if(/\b(udhaa?r|owes me|lent|loan to|on credit|baqi)\b/.test(lower)&&amount!=null){const all=st.match(/\d[\d,]*(?:\.\d+)?k?/g)||[];f.type='credit';f.when=when;f.amount=num(all[all.length-1].replace(/k/i,''),/k/i.test(all[all.length-1]));f.person=f.people[0]||cap(lower.split(' ')[0]);if(!f.people.includes(f.person))f.people.unshift(f.person);return f}
   if(/\binvoice\b/.test(lower)&&amount!=null){f.type='credit';f.when=f.dt?fD(f.dt.date):when;f.amount=amount;const pre=text.split(/\binvoice\b/i)[0].trim();f.person=pre?pre.split(/\s+/).map(w=>cap(w.toLowerCase())).join(' '):(f.people[0]||'Client');f.people=[f.person];return f}
   if(/\b(due|bill|fees)\b/.test(lower)&&amount!=null&&f.dt){f.type='task';f.amount=amount;return f}

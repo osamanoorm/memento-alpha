@@ -1,0 +1,23 @@
+{"note":"SYNTHETIC: written by Claude to stress-test the rules. Not evidence of real behaviour. 'want' = what a sensible reading would be.",
+"cases":[
+["Ali ko 5000 diye","credit"],["Ali se 3000 liye","debt"],["Bilal ne 2000 wapis kar diye","payment"],["Ammi ko 10k bheje","credit"],["khala ne 300 dollars bheje","note"],
+["bhai ko 1500 dene hain","debt"],["Sara owes me 1200","credit"],["I owe Hamza 800","debt"],["Hamza paid 800","payment"],["udhaar Raza 4000","credit"],
+["committee 10000 har mahine","note"],["BC ki qist 5000 1st ko","task"],["committee nikli 120000","money"],["rent 45000","money"],["bijli ka bill 8700 due 10 dec","task"],
+["gas bill bharna hai","task"],["K-Electric bill","task"],["school fees 25000 by 5th","task"],["maid ki salary 15000","money"],["doodh wala 3200","money"],
+["petrol 5000","money"],["careem 650","money"],["lunch 1200","money"],["groceries 8400 imtiaz","money"],["daraz order 2300","money"],
+["salary aayi","signal"],["on next salary pay Imran 20k","task"],["save 20000 for umrah","note"],["iphone fund 50000 so far","note"],["Eid ke liye kapray lene hain","task"],
+["kal dentist 4 baje","event"],["parson PTM 11am","event"],["jumma ko masjid committee meeting","event"],["Friday dinner at nani's","event"],["Saturday 8pm Ali's birthday","event"],
+["Ahmed bday 14 feb","event"],["anniversary 3 march","event"],["flight 6am tuesday","event"],["doctor appointment next monday 5pm","event"],["Eid ul Adha shopping","task"],
+["call plumber","task"],["call Ali","task"],["buy milk","task"],["pick kids at 1","task"],["renew car insurance","task"],
+["renew passport","task"],["CNIC copy for bank","note"],["pay internet bill","task"],["send cv to Hadi","task"],["email landlord","task"],
+["remind Saba about the cake","task"],["ask Imran about the plot","task"],["return library books","task"],["book dentist","task"],["order cake for Inaaya","task"],
+["groceries:\nanday\ndoodh\nbread\nchai patti","list"],["packing:\ncharger\npassport\nmeds","list"],["to do\ncall bank\nemail Ali\nslides","list"],
+["Netflix: sara@gmail.com / Pass1234","secret"],["wifi password tiger123","secret"],["ATM pin 4421","secret"],["Meezan IBAN PK36MEZN0001234567890123","ref"],["account no 0123 4567 8901 23","ref"],["HBL acc title Osama Noor","note"],
+["Ammi kurta size M","note"],["Abbu shoe size 9","note"],["house 12, block B, DHA phase 5","note"],["Inaaya first word baba 2 jan","note"],["Inaaya started walking 12 march","note"],
+["watch Dune","note"],["watched F1","status"],["book: Atomic Habits","note"],["try Kolachi","note"],["learn guitar","note"],
+["idea: app for khata","note"],["dua for travel","note"],["quran 1 para daily","note"],["gym 3x a week","note"],["2 hours study","note"],
+["oil change at 68000 km","reading"],["car service due","task"],["tyre pressure 32","note"],["room 204","note"],["Cinderella 2015","note"],
+["5 kg atta","note"],["10 eggs","note"],["2 dozen bananas","note"],["3 people dinner","note"],["50% off at Khaadi","note"],
+["Monday: Simran & Carol","note"],["Tuesday: Ali & Bilal","note"],["kitchen duty Misfa","note"],["paid cake vendor 4500","money"],["Bought dress for khala 8500","money"],
+["$400 for hosting","money"],["AED 200 to Ali","note"],["100 usd to pkr","note"],["salary 250000","note"],["bonus aaya 50k","money"]
+]}
